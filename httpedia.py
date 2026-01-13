@@ -95,7 +95,6 @@ def render_page(title, content):
         title=title,
         header=HEADER.format(title=title),
         content=content,
-        footer=FOOTER
     )
 
 def render_error(message):
