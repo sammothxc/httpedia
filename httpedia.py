@@ -23,7 +23,9 @@ PAGE_TEMPLATE = '''{doctype}
 </head>
 <body>
 {header}
-{title}
+<center>
+<h2>{title}</h2>
+</center>
 <hr>
 {content}
 </body>
