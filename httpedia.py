@@ -26,7 +26,6 @@ PAGE_TEMPLATE = '''{doctype}
 <center>
 <h2>{title}</h2>
 </center>
-<hr>
 {content}
 </body>
 </html>'''
