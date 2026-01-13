@@ -26,23 +26,18 @@ PAGE_TEMPLATE = '''{doctype}
 {title}
 <hr>
 {content}
-{footer}
 </body>
 </html>'''
 
 HEADER = '''<center>
-<h1><a href="/">HTTPedia</a>: {title}</h1>
+<h1><a href="/">HTTPedia</a></h1>
 <small>
 Basic HTML Wikipedia proxy for retro computers. Built by 
 <a href="https://github.com/sammothxc/httpedia" target="_blank">
 <b>sammothxc.</b></a>
 </small>
-<hr>
-<p><a href="/">Home</a></p>
 </center>
 <hr>'''
-
-FOOTER = '''<hr>'''
 
 ERROR_TEMPLATE = '''{doctype}
 <html>
