@@ -15,8 +15,23 @@ DOCTYPE = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 2.0//EN">'
 
 META = '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'
 
+PAGE_TEMPLATE = '''{doctype}
+<html>
+<head>
+{meta}
+<title>{title} - HTTPedia</title>
+</head>
+<body>
+{header}
+{title}
+<hr>
+{content}
+{footer}
+</body>
+</html>'''
+
 HEADER = '''<center>
-<h1>HTTPedia: {title}</h1>
+<h1><a href="/">HTTPedia</a>: {title}</h1>
 <small>
 Basic HTML Wikipedia proxy for retro computers. Built by 
 <a href="https://github.com/sammothxc/httpedia" target="_blank">
@@ -28,19 +43,6 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <hr>'''
 
 FOOTER = '''<hr>'''
-
-PAGE_TEMPLATE = '''{doctype}
-<html>
-<head>
-{meta}
-<title>{title} - HTTPedia</title>
-</head>
-<body>
-{header}
-{content}
-{footer}
-</body>
-</html>'''
 
 ERROR_TEMPLATE = '''{doctype}
 <html>
