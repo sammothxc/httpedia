@@ -141,25 +141,28 @@ def process_paragraph(element):
     for child in element.children:
         if child.name == 'a':
             href = child.get('href', '')
-            text = clean_text(child.get_text())
+            text = child.get_text()
             
-            if not text:
+            if not text.strip():
                 continue
             
             if href.startswith('/wiki/') and ':' not in href:
                 result.append(f'<a href="{href}">{text}</a>')
-            elif href.startswith('/wiki/'):
-                result.append(text)
-            elif href.startswith('http'):
-                result.append(text)
             else:
                 result.append(text)
+        
         elif child.string:
-            result.append(clean_text(child.string))
+            result.append(re.sub(r'\s+', ' ', child.string))
+        
         elif hasattr(child, 'get_text'):
-            result.append(clean_text(child.get_text()))
+            result.append(re.sub(r'\s+', ' ', child.get_text()))
     
-    return ''.join(result)
+    text = ''.join(result)
+    text = re.sub(r'\[edit\]', '', text)
+    text = re.sub(r'\[\d+\]', '', text)
+    text = re.sub(r'\[citation needed\]', '', text)
+    return text.strip()
+
 
 def process_list(element, ordered=False):
     items = []
