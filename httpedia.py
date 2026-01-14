@@ -37,6 +37,8 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <a href="https://github.com/sammothxc/httpedia" target="_blank">
 <b>sammothxc</b></a>, 2026.
 </small>
+<hr>
+<p><a href="/wiki/Home">Home</a> | <a href="{wikipedia_url}">View on Wikipedia</a> | <a href="/dark">Dark Mode</a> | <a href="https://ko-fi.com/sammothxc">Keep it running</a></p>
 </center>
 <hr>'''
 
@@ -91,15 +93,17 @@ def wiki(title):
         sup.decompose()
 
     body_content = process_content(content)
-    
-    return Response(render_page(title_text, body_content), mimetype='text/html')
 
-def render_page(title, content):
+    wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/{title}'
+    
+    return Response(render_page(title_text, body_content, wikipedia_url), mimetype='text/html')
+
+def render_page(title, content, wikipedia_url=''):
     return PAGE_TEMPLATE.format(
         doctype=DOCTYPE,
         meta=META,
         title=title,
-        header=HEADER.format(title=title),
+        header=HEADER.format(title=title, wikipedia_url=wikipedia_url),
         content=content,
     )
 
