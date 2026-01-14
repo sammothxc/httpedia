@@ -109,9 +109,9 @@ def process_content(content):
     lines = []
     for element in content.children:
         if element.name == 'p':
-            text = clean_text(element.get_text())
-            if text.strip():
-                lines.append(f'<p>{text}</p>')
+            html = process_paragraph(element)
+            if html.strip():
+                lines.append(f'<p>{html}</p>')
 
         elif element.name in ['h2', 'h3', 'h4']:
             text = clean_text(element.get_text())
@@ -134,12 +134,39 @@ def process_content(content):
 
     return '\n'.join(lines)
 
+
+def process_paragraph(element):
+    result = []
+    
+    for child in element.children:
+        if child.name == 'a':
+            href = child.get('href', '')
+            text = clean_text(child.get_text())
+            
+            if not text:
+                continue
+            
+            if href.startswith('/wiki/') and ':' not in href:
+                result.append(f'<a href="{href}">{text}</a>')
+            elif href.startswith('/wiki/'):
+                result.append(text)
+            elif href.startswith('http'):
+                result.append(text)
+            else:
+                result.append(text)
+        elif child.string:
+            result.append(clean_text(child.string))
+        elif hasattr(child, 'get_text'):
+            result.append(clean_text(child.get_text()))
+    
+    return ''.join(result)
+
 def process_list(element, ordered=False):
     items = []
     for li in element.find_all('li', recursive=False):
-        text = clean_text(li.get_text())
-        if text.strip():
-            items.append(f'<li>{text}</li>')
+        html = process_paragraph(li)
+        if html.strip():
+            items.append(f'<li>{html}</li>')
 
     if not items:
         return ''
