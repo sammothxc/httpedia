@@ -1,9 +1,9 @@
-from flask import Flask, Response
-import requests
-from bs4 import BeautifulSoup
-import re
-from dotenv import load_dotenv
 import os
+import requests
+import re
+from flask import Flask, Response, request, redirect
+from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
@@ -22,6 +22,55 @@ BODY_STYLES = {
     'light': 'bgcolor="#ffffff" text="#000000" link="#0000ee" vlink="#551a8b"',
     'dark': 'bgcolor="#1a1a1a" text="#e0e0e0" link="#6db3f2" vlink="#a0a0ff"'
 }
+
+HOME_TEMPLATE = '''{doctype}
+<html>
+<head>
+{meta}
+<title>HTTPedia - Wikipedia for Retro Computers</title>
+</head>
+<body {body_style}>
+<center>
+<small>
+<a href="{skin_toggle_url}">{skin_toggle_text}</a> | 
+<a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a>
+</small>
+<hr>
+<br>
+<h1>HTTPedia</h1>
+<small>
+Basic HTML Wikipedia proxy for retro computers. Built by 
+<a href="https://github.com/sammothxc/httpedia" target="_blank">
+<b>sammothxc</b></a>, 2026.
+</small>
+<br>
+<br>
+<form action="{search_action}" method="get">
+<input type="text" name="q" size="30">
+<input type="submit" value="Search">
+</form>
+<br>
+<h3>Quick Links</h3>
+<p>
+<a href="{prefix}/wiki/Computer">Computer</a> | 
+<a href="{prefix}/wiki/Internet">Internet</a> | 
+<a href="{prefix}/wiki/World_Wide_Web">World Wide Web</a>
+</p>
+<p>
+<a href="{prefix}/wiki/Compaq_Portable">Compaq Portable</a> | 
+<a href="{prefix}/wiki/IBM_PC">IBM PC</a> | 
+<a href="{prefix}/wiki/Apple_II">Apple II</a>
+</p>
+<h3>Other Retro-Friendly Sites</h3>
+<p>
+<a href="http://frogfind.com">FrogFind</a> | 
+<a href="http://68k.news">68k.news</a> <!-- | 
+<!-- <a href="http://textfiles.com">textfiles.com</a> -->
+</p>
+</center>
+{footer}
+</body>
+</html>'''
 
 PAGE_TEMPLATE = '''{doctype}
 <html>
@@ -76,6 +125,56 @@ ERROR_TEMPLATE = '''{doctype}
 </body>
 </html>'''
 
+@app.route('/')
+def home_light():
+    return render_home(skin='light')
+
+@app.route('/dark/')
+def home_dark():
+    return render_home(skin='dark')
+
+def render_home(skin='light'):
+    if skin == 'light':
+        prefix = ''
+        search_action = '/search'
+        skin_toggle_url = '/dark/'
+        skin_toggle_text = 'Dark Mode'
+    else:
+        prefix = '/dark'
+        search_action = '/dark/search'
+        skin_toggle_url = '/'
+        skin_toggle_text = 'Light Mode'
+    
+    return HOME_TEMPLATE.format(
+        doctype=DOCTYPE,
+        meta=META,
+        body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
+        prefix=prefix,
+        search_action=search_action,
+        skin_toggle_url=skin_toggle_url,
+        skin_toggle_text=skin_toggle_text,
+        footer=FOOTER,
+    )
+
+@app.route('/search')
+def search_light():
+    return handle_search(skin='light')
+
+@app.route('/dark/search')
+def search_dark():
+    return handle_search(skin='dark')
+
+def handle_search(skin='light'):
+    query = request.args.get('q', '')
+    if not query:
+        return render_home(skin)
+    # For now, just redirect to the wiki page
+    # We'll add real search in Phase 2
+    title = query.replace(' ', '_')
+    if skin == 'dark':
+        return redirect(f'/dark/wiki/{title}')
+    return redirect(f'/wiki/{title}')
+
 @app.route('/wiki/<path:title>')
 def wiki_light(title):
     return fetch_and_render(title, skin='light')
@@ -128,10 +227,10 @@ def fetch_and_render(title, skin='light'):
 def render_page(title, content, wikipedia_url='', skin='light', title_slug=''):
     if skin == 'light':
         skin_toggle = f'<a href="/dark/wiki/{title_slug}">Dark Mode</a>'
-        home_url = '/wiki/Home'
+        home_url = '/'
     else:
         skin_toggle = f'<a href="/wiki/{title_slug}">Light Mode</a>'
-        home_url = '/dark/wiki/Home'
+        home_url = '/dark/'
     
     return PAGE_TEMPLATE.format(
         doctype=DOCTYPE,
