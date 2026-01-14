@@ -1,2 +1,2 @@
 # httpedia
-Text-only Wikipedia proxy serving minimal HTML for retro computers
+Basic HTML Wikipedia proxy for retro computers
