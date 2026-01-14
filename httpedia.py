@@ -61,7 +61,7 @@ def wiki(title):
     except requests.RequestException as e:
         return Response(render_error(f'Could not fetch article: {e}'), mimetype='text/html')
 
-    soup = BeautifulSoup(resp.text, 'html.parser')
+    soup = BeautifulSoup(resp.text, 'lxml')
 
     page_title = soup.find('h1', {'id': 'firstHeading'})
     title_text = page_title.get_text() if page_title else title.replace('_', ' ')
