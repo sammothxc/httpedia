@@ -35,7 +35,7 @@ HEADER = '''<center>
 <small>
 Basic HTML Wikipedia proxy for retro computers. Built by 
 <a href="https://github.com/sammothxc/httpedia" target="_blank">
-<b>sammothxc.</b></a>
+<b>sammothxc</b></a>, 2026.
 </small>
 </center>
 <hr>'''
