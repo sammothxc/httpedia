@@ -116,7 +116,6 @@ def process_content(content):
 
 
 def process_element(element, lines):
-    """Recursively process an element and its children."""
     for child in element.children:
         if child.name == 'p':
             html = process_paragraph(child)
@@ -153,13 +152,20 @@ def process_element(element, lines):
             if text.strip():
                 lines.append(f'<blockquote>{text}</blockquote>')
 
-        elif child.name in ['div', 'section']:
-            # Recurse into containers
+        elif child.name == 'div':
+            if 'mw-heading' in child.get('class', []):
+                for h in child.find_all(['h2', 'h3', 'h4', 'h5', 'h6'], recursive=False):
+                    text = clean_text(h.get_text())
+                    text = re.sub(r'\[edit\]', '', text).strip()
+                    if text:
+                        lines.append(f'<{h.name}>{text}</{h.name}>')
+            else:
+                process_element(child, lines)
+
+        elif child.name == 'section':
             process_element(child, lines)
 
-
 def process_paragraph(element):
-    """Process a paragraph, preserving and rewriting links."""
     result = []
     
     for child in element.children:
@@ -189,7 +195,6 @@ def process_paragraph(element):
             result.append('<br>')
         
         elif child.name in ['span', 'small', 'sup', 'sub']:
-            # Process inline containers recursively
             result.append(process_paragraph(child))
         
         elif child.string:
