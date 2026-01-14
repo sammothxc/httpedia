@@ -66,7 +66,8 @@ def wiki(title):
     page_title = soup.find('h1', {'id': 'firstHeading'})
     title_text = page_title.get_text() if page_title else title.replace('_', ' ')
 
-    content = soup.find('div', {'class': 'mw-parser-output'})
+    all_outputs = soup.find_all('div', {'class': 'mw-parser-output'})
+    content = max(all_outputs, key=lambda div: len(list(div.children))) if all_outputs else None
     if not content:
         return Response(render_error('Could not parse article'), mimetype='text/html')
 
