@@ -2,6 +2,9 @@ from flask import Flask, Response
 import requests
 from bs4 import BeautifulSoup
 import re
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -251,4 +254,5 @@ def clean_text(text):
     return text.strip()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=False)
+    debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(host='0.0.0.0', port=8080, debug=debug)
