@@ -27,6 +27,7 @@ PAGE_TEMPLATE = '''{doctype}
 <h2>{title}</h2>
 </center>
 {content}
+{footer}
 </body>
 </html>'''
 
@@ -41,6 +42,18 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <p><a href="/wiki/Home">Home</a> | <a href="{wikipedia_url}">View on Wikipedia</a> | <a href="/dark">Dark Mode</a> | <a href="https://ko-fi.com/sammothxc">Keep it running</a></p>
 </center>
 <hr>'''
+
+FOOTER = '''<hr>
+<center>
+<small>
+Content sourced from <a href="https://en.wikipedia.org">Wikipedia</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
+</small>
+<br>
+<small>
+Donations support HTTPedia hosting, not Wikipedia.
+</small>
+<br>
+</center>'''
 
 ERROR_TEMPLATE = '''{doctype}
 <html>
@@ -105,6 +118,7 @@ def render_page(title, content, wikipedia_url=''):
         title=title,
         header=HEADER.format(title=title, wikipedia_url=wikipedia_url),
         content=content,
+        footer=FOOTER,
     )
 
 def render_error(message):
