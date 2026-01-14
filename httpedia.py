@@ -71,11 +71,15 @@ def wiki(title):
         return Response(render_error('Could not parse article'), mimetype='text/html')
 
     unwanted_selectors = [
-        'script', 'style', 'img', 'figure', 'table',
-        '.infobox', '.navbox', '.sidebar', '.mw-editsection',
-        '.reference', '.reflist', '.thumb', '.mw-empty-elt',
-        '.noprint', '.mw-jump-link', '.toc', '#coordinates',
-        '.hatnote', '.shortdescription', '.mbox-small'
+    'script', 'style', 'img', 'figure', 'table',
+    '.infobox', '.navbox', '.sidebar', '.mw-editsection',
+    '.reference', '.reflist', '.thumb', '.mw-empty-elt',
+    '.noprint', '.mw-jump-link', '.toc', '#coordinates',
+    '.hatnote', '.shortdescription', '.mbox-small',
+    '.ambox', '.cmbox', '.fmbox', '.imbox', '.ombox', '.tmbox',
+    '.portal', '.sistersitebox', '.noexcerpt',
+    '.mw-references-wrap', '.refbegin', '.refend',
+    '.navbox-styles', '.catlinks', '.mw-authority-control',
     ]
 
     for selector in unwanted_selectors:
@@ -107,35 +111,55 @@ def render_error(message):
 
 def process_content(content):
     lines = []
-    for element in content.children:
-        if element.name == 'p':
-            html = process_paragraph(element)
-            if html.strip():
-                lines.append(f'<p>{html}</p>')
-
-        elif element.name in ['h2', 'h3', 'h4']:
-            text = clean_text(element.get_text())
-            text = re.sub(r'\[edit\]', '', text).strip()
-            if text:
-                lines.append(f'<{element.name}>{text}</{element.name}>')
-
-        elif element.name == 'ul':
-            lines.append(process_list(element))
-
-        elif element.name == 'ol':
-            lines.append(process_list(element, ordered=True))
-
-        elif element.name == 'dl':
-            for child in element.children:
-                if child.name == 'dt':
-                    lines.append(f'<p><b>{clean_text(child.get_text())}</b></p>')
-                elif child.name == 'dd':
-                    lines.append(f'<p>{clean_text(child.get_text())}</p>')
-
+    process_element(content, lines)
     return '\n'.join(lines)
 
 
+def process_element(element, lines):
+    """Recursively process an element and its children."""
+    for child in element.children:
+        if child.name == 'p':
+            html = process_paragraph(child)
+            if html.strip():
+                lines.append(f'<p>{html}</p>')
+
+        elif child.name in ['h2', 'h3', 'h4', 'h5', 'h6']:
+            text = clean_text(child.get_text())
+            text = re.sub(r'\[edit\]', '', text).strip()
+            if text:
+                lines.append(f'<{child.name}>{text}</{child.name}>')
+
+        elif child.name == 'ul':
+            list_html = process_list(child)
+            if list_html:
+                lines.append(list_html)
+
+        elif child.name == 'ol':
+            list_html = process_list(child, ordered=True)
+            if list_html:
+                lines.append(list_html)
+
+        elif child.name == 'dl':
+            for item in child.children:
+                if item.name == 'dt':
+                    lines.append(f'<p><b>{clean_text(item.get_text())}</b></p>')
+                elif item.name == 'dd':
+                    html = process_paragraph(item)
+                    if html.strip():
+                        lines.append(f'<p>{html}</p>')
+
+        elif child.name == 'blockquote':
+            text = clean_text(child.get_text())
+            if text.strip():
+                lines.append(f'<blockquote>{text}</blockquote>')
+
+        elif child.name in ['div', 'section']:
+            # Recurse into containers
+            process_element(child, lines)
+
+
 def process_paragraph(element):
+    """Process a paragraph, preserving and rewriting links."""
     result = []
     
     for child in element.children:
@@ -150,6 +174,23 @@ def process_paragraph(element):
                 result.append(f'<a href="{href}">{text}</a>')
             else:
                 result.append(text)
+        
+        elif child.name == 'b' or child.name == 'strong':
+            text = child.get_text()
+            if text.strip():
+                result.append(f'<b>{text}</b>')
+        
+        elif child.name == 'i' or child.name == 'em':
+            text = child.get_text()
+            if text.strip():
+                result.append(f'<i>{text}</i>')
+        
+        elif child.name == 'br':
+            result.append('<br>')
+        
+        elif child.name in ['span', 'small', 'sup', 'sub']:
+            # Process inline containers recursively
+            result.append(process_paragraph(child))
         
         elif child.string:
             result.append(re.sub(r'\s+', ' ', child.string))
@@ -176,6 +217,7 @@ def process_list(element, ordered=False):
 
     tag = 'ol' if ordered else 'ul'
     return f'<{tag}>\n' + '\n'.join(items) + f'\n</{tag}>'
+
 
 def clean_text(text):
     text = re.sub(r'\s+', ' ', text)
