@@ -35,7 +35,7 @@ HEADER = '''<center>
 <small>
 Basic HTML Wikipedia proxy for retro computers. Built by 
 <a href="https://github.com/sammothxc/httpedia" target="_blank">
-<b>sammothxc.</b></a>
+<b>sammothxc</b></a>, 2026.
 </small>
 </center>
 <hr>'''
@@ -61,21 +61,26 @@ def wiki(title):
     except requests.RequestException as e:
         return Response(render_error(f'Could not fetch article: {e}'), mimetype='text/html')
 
-    soup = BeautifulSoup(resp.text, 'html.parser')
+    soup = BeautifulSoup(resp.text, 'lxml')
 
     page_title = soup.find('h1', {'id': 'firstHeading'})
     title_text = page_title.get_text() if page_title else title.replace('_', ' ')
 
-    content = soup.find('div', {'class': 'mw-parser-output'})
+    all_outputs = soup.find_all('div', {'class': 'mw-parser-output'})
+    content = max(all_outputs, key=lambda div: len(list(div.children))) if all_outputs else None
     if not content:
         return Response(render_error('Could not parse article'), mimetype='text/html')
 
     unwanted_selectors = [
-        'script', 'style', 'img', 'figure', 'table',
-        '.infobox', '.navbox', '.sidebar', '.mw-editsection',
-        '.reference', '.reflist', '.thumb', '.mw-empty-elt',
-        '.noprint', '.mw-jump-link', '.toc', '#coordinates',
-        '.hatnote', '.shortdescription', '.mbox-small'
+    'script', 'style', 'img', 'figure', 'table',
+    '.infobox', '.navbox', '.sidebar', '.mw-editsection',
+    '.reference', '.reflist', '.thumb', '.mw-empty-elt',
+    '.noprint', '.mw-jump-link', '.toc', '#coordinates',
+    '.hatnote', '.shortdescription', '.mbox-small',
+    '.ambox', '.cmbox', '.fmbox', '.imbox', '.ombox', '.tmbox',
+    '.portal', '.sistersitebox', '.noexcerpt',
+    '.mw-references-wrap', '.refbegin', '.refend',
+    '.navbox-styles', '.catlinks', '.mw-authority-control',
     ]
 
     for selector in unwanted_selectors:
@@ -107,45 +112,118 @@ def render_error(message):
 
 def process_content(content):
     lines = []
-    for element in content.children:
-        if element.name == 'p':
-            text = clean_text(element.get_text())
-            if text.strip():
-                lines.append(f'<p>{text}</p>')
+    process_element(content, lines)
+    return '\n'.join(lines)
 
-        elif element.name in ['h2', 'h3', 'h4']:
-            text = clean_text(element.get_text())
+
+def process_element(element, lines):
+    for child in element.children:
+        if child.name == 'p':
+            html = process_paragraph(child)
+            if html.strip():
+                lines.append(f'<p>{html}</p>')
+
+        elif child.name in ['h2', 'h3', 'h4', 'h5', 'h6']:
+            text = clean_text(child.get_text())
             text = re.sub(r'\[edit\]', '', text).strip()
             if text:
-                lines.append(f'<{element.name}>{text}</{element.name}>')
+                lines.append(f'<{child.name}>{text}</{child.name}>')
 
-        elif element.name == 'ul':
-            lines.append(process_list(element))
+        elif child.name == 'ul':
+            list_html = process_list(child)
+            if list_html:
+                lines.append(list_html)
 
-        elif element.name == 'ol':
-            lines.append(process_list(element, ordered=True))
+        elif child.name == 'ol':
+            list_html = process_list(child, ordered=True)
+            if list_html:
+                lines.append(list_html)
 
-        elif element.name == 'dl':
-            for child in element.children:
-                if child.name == 'dt':
-                    lines.append(f'<p><b>{clean_text(child.get_text())}</b></p>')
-                elif child.name == 'dd':
-                    lines.append(f'<p>{clean_text(child.get_text())}</p>')
+        elif child.name == 'dl':
+            for item in child.children:
+                if item.name == 'dt':
+                    lines.append(f'<p><b>{clean_text(item.get_text())}</b></p>')
+                elif item.name == 'dd':
+                    html = process_paragraph(item)
+                    if html.strip():
+                        lines.append(f'<p>{html}</p>')
 
-    return '\n'.join(lines)
+        elif child.name == 'blockquote':
+            text = clean_text(child.get_text())
+            if text.strip():
+                lines.append(f'<blockquote>{text}</blockquote>')
+
+        elif child.name == 'div':
+            if 'mw-heading' in child.get('class', []):
+                for h in child.find_all(['h2', 'h3', 'h4', 'h5', 'h6'], recursive=False):
+                    text = clean_text(h.get_text())
+                    text = re.sub(r'\[edit\]', '', text).strip()
+                    if text:
+                        lines.append(f'<{h.name}>{text}</{h.name}>')
+            else:
+                process_element(child, lines)
+
+        elif child.name == 'section':
+            process_element(child, lines)
+
+def process_paragraph(element):
+    result = []
+    
+    for child in element.children:
+        if child.name == 'a':
+            href = child.get('href', '')
+            text = child.get_text()
+            
+            if not text.strip():
+                continue
+            
+            if href.startswith('/wiki/') and ':' not in href:
+                result.append(f'<a href="{href}">{text}</a>')
+            else:
+                result.append(text)
+        
+        elif child.name == 'b' or child.name == 'strong':
+            text = child.get_text()
+            if text.strip():
+                result.append(f'<b>{text}</b>')
+        
+        elif child.name == 'i' or child.name == 'em':
+            text = child.get_text()
+            if text.strip():
+                result.append(f'<i>{text}</i>')
+        
+        elif child.name == 'br':
+            result.append('<br>')
+        
+        elif child.name in ['span', 'small', 'sup', 'sub']:
+            result.append(process_paragraph(child))
+        
+        elif child.string:
+            result.append(re.sub(r'\s+', ' ', child.string))
+        
+        elif hasattr(child, 'get_text'):
+            result.append(re.sub(r'\s+', ' ', child.get_text()))
+    
+    text = ''.join(result)
+    text = re.sub(r'\[edit\]', '', text)
+    text = re.sub(r'\[\d+\]', '', text)
+    text = re.sub(r'\[citation needed\]', '', text)
+    return text.strip()
+
 
 def process_list(element, ordered=False):
     items = []
     for li in element.find_all('li', recursive=False):
-        text = clean_text(li.get_text())
-        if text.strip():
-            items.append(f'<li>{text}</li>')
+        html = process_paragraph(li)
+        if html.strip():
+            items.append(f'<li>{html}</li>')
 
     if not items:
         return ''
 
     tag = 'ol' if ordered else 'ul'
     return f'<{tag}>\n' + '\n'.join(items) + f'\n</{tag}>'
+
 
 def clean_text(text):
     text = re.sub(r'\s+', ' ', text)
@@ -155,4 +233,4 @@ def clean_text(text):
     return text.strip()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=False)
