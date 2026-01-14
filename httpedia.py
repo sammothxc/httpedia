@@ -47,14 +47,14 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <b>sammothxc</b></a>, 2026.
 </small>
 <hr>
-<p><a href="/wiki/Home">Home</a> | <a href="{wikipedia_url}">View on Wikipedia</a> | {skin_toggle} | <a href="https://ko-fi.com/sammothxc">Keep it running</a></p>
+<p><a href="{home_url}">Home/Search</a> | <a href="{wikipedia_url}" target="_blank">View on Wikipedia</a> | {skin_toggle} | <a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a></p>
 </center>
 <hr>'''
 
 FOOTER = '''<hr>
 <center>
 <small>
-Content sourced from <a href="https://en.wikipedia.org">Wikipedia</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
+Content sourced from <a href="https://en.wikipedia.org" target="_blank">Wikipedia</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank">CC BY-SA 4.0</a>.
 </small>
 <br>
 <small>
@@ -128,15 +128,17 @@ def fetch_and_render(title, skin='light'):
 def render_page(title, content, wikipedia_url='', skin='light', title_slug=''):
     if skin == 'light':
         skin_toggle = f'<a href="/dark/wiki/{title_slug}">Dark Mode</a>'
+        home_url = '/wiki/Home'
     else:
         skin_toggle = f'<a href="/wiki/{title_slug}">Light Mode</a>'
+        home_url = '/dark/wiki/Home'
     
     return PAGE_TEMPLATE.format(
         doctype=DOCTYPE,
         meta=META,
         title=title,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
-        header=HEADER.format(wikipedia_url=wikipedia_url, skin_toggle=skin_toggle),
+        header=HEADER.format(wikipedia_url=wikipedia_url, skin_toggle=skin_toggle, home_url=home_url),
         content=content,
         footer=FOOTER,
     )
