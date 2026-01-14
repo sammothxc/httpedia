@@ -18,13 +18,18 @@ DOCTYPE = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 2.0//EN">'
 
 META = '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'
 
+BODY_STYLES = {
+    'light': 'bgcolor="#ffffff" text="#000000" link="#0000ee" vlink="#551a8b"',
+    'dark': 'bgcolor="#1a1a1a" text="#e0e0e0" link="#6db3f2" vlink="#a0a0ff"'
+}
+
 PAGE_TEMPLATE = '''{doctype}
 <html>
 <head>
 {meta}
 <title>{title} - HTTPedia</title>
 </head>
-<body>
+<body {body_style}>
 {header}
 <center>
 <h2>{title}</h2>
@@ -35,14 +40,14 @@ PAGE_TEMPLATE = '''{doctype}
 </html>'''
 
 HEADER = '''<center>
-<h1><a href="/">HTTPedia</a></h1>
+<h1>HTTPedia</h1>
 <small>
 Basic HTML Wikipedia proxy for retro computers. Built by 
 <a href="https://github.com/sammothxc/httpedia" target="_blank">
 <b>sammothxc</b></a>, 2026.
 </small>
 <hr>
-<p><a href="/wiki/Home">Home</a> | <a href="{wikipedia_url}">View on Wikipedia</a> | <a href="/dark">Dark Mode</a> | <a href="https://ko-fi.com/sammothxc">Keep it running</a></p>
+<p><a href="/wiki/Home">Home</a> | <a href="{wikipedia_url}">View on Wikipedia</a> | {skin_toggle} | <a href="https://ko-fi.com/sammothxc">Keep it running</a></p>
 </center>
 <hr>'''
 
@@ -72,7 +77,14 @@ ERROR_TEMPLATE = '''{doctype}
 </html>'''
 
 @app.route('/wiki/<path:title>')
-def wiki(title):
+def wiki_light(title):
+    return fetch_and_render(title, skin='light')
+
+@app.route('/dark/wiki/<path:title>')
+def wiki_dark(title):
+    return fetch_and_render(title, skin='dark')
+
+def fetch_and_render(title, skin='light'):
     try:
         resp = requests.get(f'{WIKIPEDIA_BASE}/wiki/{title}', headers=HEADERS, timeout=10)
         resp.raise_for_status()
@@ -88,7 +100,7 @@ def wiki(title):
     content = max(all_outputs, key=lambda div: len(list(div.children))) if all_outputs else None
     if not content:
         return Response(render_error('Could not parse article'), mimetype='text/html')
-
+    
     unwanted_selectors = [
     'script', 'style', 'img', 'figure', 'table',
     '.infobox', '.navbox', '.sidebar', '.mw-editsection',
@@ -108,21 +120,27 @@ def wiki(title):
     for sup in content.find_all('sup', {'class': 'reference'}):
         sup.decompose()
 
-    body_content = process_content(content)
-
+    body_content = process_content(content, skin)
     wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/{title}'
-    
-    return Response(render_page(title_text, body_content, wikipedia_url), mimetype='text/html')
 
-def render_page(title, content, wikipedia_url=''):
+    return Response(render_page(title_text, body_content, wikipedia_url, skin, title), mimetype='text/html')
+
+def render_page(title, content, wikipedia_url='', skin='light', title_slug=''):
+    if skin == 'light':
+        skin_toggle = f'<a href="/dark/wiki/{title_slug}">Dark Mode</a>'
+    else:
+        skin_toggle = f'<a href="/wiki/{title_slug}">Light Mode</a>'
+    
     return PAGE_TEMPLATE.format(
         doctype=DOCTYPE,
         meta=META,
         title=title,
-        header=HEADER.format(title=title, wikipedia_url=wikipedia_url),
+        body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
+        header=HEADER.format(wikipedia_url=wikipedia_url, skin_toggle=skin_toggle),
         content=content,
         footer=FOOTER,
     )
+
 
 def render_error(message):
     return ERROR_TEMPLATE.format(
@@ -131,16 +149,17 @@ def render_error(message):
         message=message
     )
 
-def process_content(content):
+def process_content(content, skin='light'):
     lines = []
-    process_element(content, lines)
+    process_element(content, lines, skin)
     return '\n'.join(lines)
 
 
-def process_element(element, lines):
+
+def process_element(element, lines, skin='light'):
     for child in element.children:
         if child.name == 'p':
-            html = process_paragraph(child)
+            html = process_paragraph(child, skin)
             if html.strip():
                 lines.append(f'<p>{html}</p>')
 
@@ -151,12 +170,12 @@ def process_element(element, lines):
                 lines.append(f'<{child.name}>{text}</{child.name}>')
 
         elif child.name == 'ul':
-            list_html = process_list(child)
+            list_html = process_list(child, ordered=False, skin=skin)
             if list_html:
                 lines.append(list_html)
 
         elif child.name == 'ol':
-            list_html = process_list(child, ordered=True)
+            list_html = process_list(child, ordered=True, skin=skin)
             if list_html:
                 lines.append(list_html)
 
@@ -182,12 +201,12 @@ def process_element(element, lines):
                     if text:
                         lines.append(f'<{h.name}>{text}</{h.name}>')
             else:
-                process_element(child, lines)
+                process_element(child, lines, skin)
 
         elif child.name == 'section':
-            process_element(child, lines)
+            process_element(child, lines, skin)
 
-def process_paragraph(element):
+def process_paragraph(element, skin='light'):
     result = []
     
     for child in element.children:
@@ -199,6 +218,8 @@ def process_paragraph(element):
                 continue
             
             if href.startswith('/wiki/') and ':' not in href:
+                if skin == 'dark':
+                    href = '/dark' + href
                 result.append(f'<a href="{href}">{text}</a>')
             else:
                 result.append(text)
@@ -217,7 +238,7 @@ def process_paragraph(element):
             result.append('<br>')
         
         elif child.name in ['span', 'small', 'sup', 'sub']:
-            result.append(process_paragraph(child))
+            result.append(process_paragraph(child, skin))
         
         elif child.string:
             result.append(re.sub(r'\s+', ' ', child.string))
@@ -232,10 +253,10 @@ def process_paragraph(element):
     return text.strip()
 
 
-def process_list(element, ordered=False):
+def process_list(element, ordered=False, skin='light'):
     items = []
     for li in element.find_all('li', recursive=False):
-        html = process_paragraph(li)
+        html = process_paragraph(li, skin)
         if html.strip():
             items.append(f'<li>{html}</li>')
 
