@@ -327,7 +327,7 @@ def process_paragraph(element, skin='light'):
         elif child.name == 'b' or child.name == 'strong':
             text = child.get_text()
             if text.strip():
-                result.append(f'<b>{text}</b>')
+                result.append(text)
         
         elif child.name == 'i' or child.name == 'em':
             text = child.get_text()
