@@ -4,24 +4,37 @@ import re
 from flask import Flask, Response, request, redirect, send_file
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-load_dotenv()
 
+
+load_dotenv()
 app = Flask(__name__)
 
+
+DEFAULTS = {
+    'skin': 'light',
+    'img': '1',
+}
+
+
 WIKIPEDIA_BASE = 'https://en.wikipedia.org'
+
 
 HEADERS = {
     'User-Agent': 'HTTPedia/1.0 (https://httpedia.samwarr.dev; minimal Wikipedia proxy for vintage browsers)'
 }
 
+
 DOCTYPE = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 2.0//EN">'
 
+
 META = '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'
+
 
 BODY_STYLES = {
     'light': 'bgcolor="#ffffff" text="#000000" link="#0000ee" vlink="#551a8b"',
     'dark': 'bgcolor="#1a1a1a" text="#e0e0e0" link="#6db3f2" vlink="#a0a0ff"'
 }
+
 
 HOME_TEMPLATE = '''{doctype}
 <html>
@@ -72,6 +85,7 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 </body>
 </html>'''
 
+
 PAGE_TEMPLATE = '''{doctype}
 <html>
 <head>
@@ -88,6 +102,7 @@ PAGE_TEMPLATE = '''{doctype}
 </body>
 </html>'''
 
+
 HEADER = '''<center>
 <h1>HTTPedia</h1>
 <small>
@@ -96,9 +111,14 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <b>sammothxc</b></a>, 2026.
 </small>
 <hr>
-<p><a href="/?{prefs}">Home/Search</a> | <a href="{wikipedia_url}" target="_blank">View on Wikipedia</a> | <a href="/wiki/{title_slug}?{skin_toggle_params}">{skin_toggle_text}</a> | <a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a></p>
+<p><a href="/?{prefs}">Home/Search</a> | 
+<a href="{wikipedia_url}" target="_blank">View on Wikipedia</a> | 
+<a href="/wiki/{title_slug}?{skin_toggle_params}">{skin_toggle_text}</a> | 
+<a href="/wiki/{title_slug}?{img_toggle_params}">{img_toggle_text}</a> | 
+<a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a></p>
 </center>
 <hr>'''
+
 
 FOOTER = '''<hr>
 <center>
@@ -111,6 +131,7 @@ Donations support HTTPedia hosting, not Wikipedia.
 </small>
 <br>
 </center>'''
+
 
 ERROR_TEMPLATE = '''{doctype}
 <html>
@@ -132,8 +153,13 @@ def get_prefs():
     # planned prefs:
     # lang = request.args.get('lang', 'en')
     return {'skin': skin, 'img': img}
+
+
 def build_prefs_string(prefs):
-    return '&'.join(f'{k}={v}' for k, v in prefs.items())
+    non_default = {k: v for k, v in prefs.items() if v != DEFAULTS.get(k)}
+    if not non_default:
+        return ''
+    return '&'.join(f'{k}={v}' for k, v in non_default.items())
 
 
 def get_skin_toggle(prefs):
@@ -223,7 +249,8 @@ def fetch_and_render(title, prefs):
     skin = prefs['skin']
     prefs_string = build_prefs_string(prefs)
     skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
-    
+    img_toggle_params, img_toggle_text = get_img_toggle(prefs)
+
     try:
         resp = requests.get(f'{WIKIPEDIA_BASE}/wiki/{title}', headers=HEADERS, timeout=10)
         resp.raise_for_status()
@@ -262,10 +289,10 @@ def fetch_and_render(title, prefs):
     body_content = process_content(content, prefs_string)
     wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/{title}'
 
-    return Response(render_page(title_text, body_content, wikipedia_url, skin, title, prefs_string, skin_toggle_params, skin_toggle_text), mimetype='text/html')
+    return Response(render_page(title_text, body_content, wikipedia_url, skin, title, prefs_string, skin_toggle_params, skin_toggle_text, img_toggle_params, img_toggle_text), mimetype='text/html')
 
 
-def render_page(title, content, wikipedia_url, skin, title_slug, prefs, skin_toggle_params, skin_toggle_text):
+def render_page(title, content, wikipedia_url, skin, title_slug, prefs, skin_toggle_params, skin_toggle_text, img_toggle_params, img_toggle_text):
     return PAGE_TEMPLATE.format(
         doctype=DOCTYPE,
         meta=META,
@@ -277,6 +304,8 @@ def render_page(title, content, wikipedia_url, skin, title_slug, prefs, skin_tog
             prefs=prefs,
             skin_toggle_params=skin_toggle_params,
             skin_toggle_text=skin_toggle_text,
+            img_toggle_params=img_toggle_params,
+            img_toggle_text=img_toggle_text,
         ),
         content=content,
         footer=FOOTER,
@@ -360,9 +389,10 @@ def process_paragraph(element, prefs):
                 continue
             
             if href.startswith('/wiki/') and ':' not in href:
-                result.append(f'<a href="{href}?{prefs}">{text}</a>')
-            else:
-                result.append(text)
+                if prefs:
+                    result.append(f'<a href="{href}?{prefs}">{text}</a>')
+                else:
+                    result.append(f'<a href="{href}">{text}</a>')
         
         elif child.name == 'b' or child.name == 'strong':
             text = child.get_text()
