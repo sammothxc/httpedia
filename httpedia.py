@@ -82,7 +82,6 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <a href="http://textfiles.com/" target="_blank">textfiles.com</a>*
 </p>
 </center>
-{footer}
 </body>
 </html>'''
 
