@@ -319,7 +319,8 @@ def fetch_and_render(title, prefs):
     for sup in content.find_all('sup', {'class': 'reference'}):
         sup.decompose()
 
-    body_content = process_content(content, prefs_string)
+    body_content = f'<center><h2>{title}</h2></center>'
+    body_content += process_content(content, prefs_string)
     wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/{title}'
 
     return Response(render_page(title_text, body_content, wikipedia_url, skin, title, prefs_string, skin_toggle_params, skin_toggle_text, img_toggle_params, img_toggle_text), mimetype='text/html')
