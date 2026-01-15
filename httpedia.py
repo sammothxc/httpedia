@@ -120,11 +120,7 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 FOOTER = '''<hr>
 <center>
 <small>
-Content sourced from <a href="https://en.wikipedia.org" target="_blank">Wikipedia</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank">CC BY-SA 4.0</a>.
-<a href="{wikipedia_url}" target="_blank">View this page on Wikipedia</a>
-</small>
-<br>
-<small>
+Content sourced from <a href="{wikipedia_url}" target="_blank">this Wikipedia page</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank">CC BY-SA 4.0</a>.
 Donations support HTTPedia hosting, not Wikipedia.
 </small>
 <br>
