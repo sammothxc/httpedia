@@ -64,8 +64,8 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 </p>
 <h3>Other Retro-Friendly Sites</h3>
 <p>
-<a href="http://frogfind.com">FrogFind</a> | 
-<a href="http://68k.news">68k.news</a>
+<a href="http://frogfind.com" target="_blank">FrogFind</a> | 
+<a href="http://68k.news" target="_blank">68k.news</a>
 </p>
 </center>
 {footer}
