@@ -403,4 +403,4 @@ def clean_text(text):
 
 if __name__ == '__main__':
     debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
-    app.run(host='0.0.0.0', port=8080, debug=debug)
+    app.run(host='0.0.0.0', port=80, debug=debug)
