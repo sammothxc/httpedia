@@ -169,7 +169,7 @@ def home():
     img_toggle_params, img_toggle_text = get_img_toggle(prefs)
 
     if img == '1':
-        logo = '<img src="/static/httpedia-logo.gif" alt="HTTPedia Logo" width="388" height="78">'
+        logo = '<img src="/static/httpedia-logo.gif" alt="HTTPedia Logo" width="323" height="65">'
     else:
         logo = '<h1>HTTPedia</h1>'
 
