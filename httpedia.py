@@ -33,12 +33,12 @@ HOME_TEMPLATE = '''{doctype}
 <center>
 <small>
 <a href="/?{skin_toggle_params}">{skin_toggle_text}</a> | 
+<a href="/?{img_toggle_params}">{img_toggle_text}</a> | 
 <a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a>
 </small>
 <hr>
 <br>
-<!-- <h1>HTTPedia</h1> -->
-<img src="/static/httpedia-logo.gif" alt="HTTPedia Logo" width="388" height="78">
+{logo}
 <br>
 <small>
 Basic HTML Wikipedia proxy for retro computers. Built by 
@@ -50,6 +50,7 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <form action="/search" method="get">
 <input type="text" name="q" size="30">
 <input type="hidden" name="skin" value="{skin}">
+<input type="hidden" name="img" value="{img}">
 <input type="submit" value="Search">
 </form>
 <br>
@@ -128,12 +129,10 @@ ERROR_TEMPLATE = '''{doctype}
 
 def get_prefs():
     skin = request.args.get('skin', 'light')
+    img = request.args.get('img', '1')
     # planned prefs:
-    # img = request.args.get('img', '0')
     # lang = request.args.get('lang', 'en')
-    return {'skin': skin}
-
-
+    return {'skin': skin, 'img': img}
 def build_prefs_string(prefs):
     return '&'.join(f'{k}={v}' for k, v in prefs.items())
 
@@ -149,21 +148,43 @@ def get_skin_toggle(prefs):
     return build_prefs_string(new_prefs), text
 
 
+def get_img_toggle(prefs):
+    new_prefs = prefs.copy()
+    if prefs['img'] == '0':
+        new_prefs['img'] = '1'
+        text = 'Load Images'
+    else:
+        new_prefs['img'] = '0'
+        text = "Don't Load Images"
+    return build_prefs_string(new_prefs), text
+
+
 @app.route('/')
 def home():
     prefs = get_prefs()
     skin = prefs['skin']
+    img = prefs['img']
     prefs_string = build_prefs_string(prefs)
     skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
-    
+    img_toggle_params, img_toggle_text = get_img_toggle(prefs)
+
+    if img == '1':
+        logo = '<img src="/static/httpedia-logo.gif" alt="HTTPedia Logo" width="388" height="78">'
+    else:
+        logo = '<h1>HTTPedia</h1>'
+
     return HOME_TEMPLATE.format(
         doctype=DOCTYPE,
         meta=META,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
         skin=skin,
+        img=img,
         prefs=prefs_string,
         skin_toggle_params=skin_toggle_params,
         skin_toggle_text=skin_toggle_text,
+        img_toggle_params=img_toggle_params,
+        img_toggle_text=img_toggle_text,
+        logo=logo,
         footer=FOOTER,
     )
 
