@@ -56,8 +56,6 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <a href="{prefix}/wiki/Computer">Computer</a> | 
 <a href="{prefix}/wiki/Internet">Internet</a> | 
 <a href="{prefix}/wiki/World_Wide_Web">World Wide Web</a>
-</p>
-<p>
 <a href="{prefix}/wiki/Compaq_Portable">Compaq Portable</a> | 
 <a href="{prefix}/wiki/IBM_PC">IBM PC</a> | 
 <a href="{prefix}/wiki/Apple_II">Apple II</a>
