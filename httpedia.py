@@ -32,7 +32,7 @@ HOME_TEMPLATE = '''{doctype}
 <body {body_style}>
 <center>
 <small>
-<a href="{skin_toggle_url}">{skin_toggle_text}</a> | 
+<a href="/?{skin_toggle_params}">{skin_toggle_text}</a> | 
 <a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a>
 </small>
 <hr>
@@ -47,25 +47,25 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 </small>
 <br>
 <br>
-<form action="{search_action}" method="get">
+<form action="/search" method="get">
 <input type="text" name="q" size="30">
+<input type="hidden" name="skin" value="{skin}">
 <input type="submit" value="Search">
 </form>
 <br>
 <h3>Quick Links</h3>
 <p>
-<a href="{prefix}/wiki/Computer">Computer</a> | 
-<a href="{prefix}/wiki/Internet">Internet</a> | 
-<a href="{prefix}/wiki/World_Wide_Web">World Wide Web</a>
-<a href="{prefix}/wiki/Compaq_Portable">Compaq Portable</a> | 
-<a href="{prefix}/wiki/IBM_PC">IBM PC</a> | 
-<a href="{prefix}/wiki/Apple_II">Apple II</a>
+<a href="/wiki/Computer?{prefs}">Computer</a> | 
+<a href="/wiki/Internet?{prefs}">Internet</a> | 
+<a href="/wiki/World_Wide_Web?{prefs}">World Wide Web</a> | 
+<a href="/wiki/Compaq_Portable?{prefs}">Compaq Portable</a> | 
+<a href="/wiki/IBM_PC?{prefs}">IBM PC</a> | 
+<a href="/wiki/Apple_II?{prefs}">Apple II</a>
 </p>
 <h3>Other Retro-Friendly Sites</h3>
 <p>
 <a href="http://frogfind.com">FrogFind</a> | 
-<a href="http://68k.news">68k.news</a> <!-- | 
-<!-- <a href="http://textfiles.com">textfiles.com</a> -->
+<a href="http://68k.news">68k.news</a>
 </p>
 </center>
 {footer}
@@ -96,7 +96,7 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <b>sammothxc</b></a>, 2026.
 </small>
 <hr>
-<p><a href="{home_url}">Home/Search</a> | <a href="{wikipedia_url}" target="_blank">View on Wikipedia</a> | {skin_toggle} | <a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a></p>
+<p><a href="/?{prefs}">Home/Search</a> | <a href="{wikipedia_url}" target="_blank">View on Wikipedia</a> | <a href="/wiki/{title_slug}?{skin_toggle_params}">{skin_toggle_text}</a> | <a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a></p>
 </center>
 <hr>'''
 
@@ -125,65 +125,71 @@ ERROR_TEMPLATE = '''{doctype}
 </body>
 </html>'''
 
-@app.route('/')
-def home_light():
-    return render_home(skin='light')
 
-@app.route('/dark/')
-def home_dark():
-    return render_home(skin='dark')
+def get_prefs():
+    skin = request.args.get('skin', 'light')
+    # planned prefs:
+    # img = request.args.get('img', '0')
+    # lang = request.args.get('lang', 'en')
+    return {'skin': skin}
 
-def render_home(skin='light'):
-    if skin == 'light':
-        prefix = ''
-        search_action = '/search'
-        skin_toggle_url = '/dark/'
-        skin_toggle_text = 'Dark Mode'
+
+def build_prefs_string(prefs):
+    return '&'.join(f'{k}={v}' for k, v in prefs.items())
+
+
+def get_skin_toggle(prefs):
+    new_prefs = prefs.copy()
+    if prefs['skin'] == 'light':
+        new_prefs['skin'] = 'dark'
+        text = 'Dark Mode'
     else:
-        prefix = '/dark'
-        search_action = '/dark/search'
-        skin_toggle_url = '/'
-        skin_toggle_text = 'Light Mode'
+        new_prefs['skin'] = 'light'
+        text = 'Light Mode'
+    return build_prefs_string(new_prefs), text
+
+
+@app.route('/')
+def home():
+    prefs = get_prefs()
+    skin = prefs['skin']
+    prefs_string = build_prefs_string(prefs)
+    skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
     
     return HOME_TEMPLATE.format(
         doctype=DOCTYPE,
         meta=META,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
-        prefix=prefix,
-        search_action=search_action,
-        skin_toggle_url=skin_toggle_url,
+        skin=skin,
+        prefs=prefs_string,
+        skin_toggle_params=skin_toggle_params,
         skin_toggle_text=skin_toggle_text,
         footer=FOOTER,
     )
 
+
 @app.route('/search')
-def search_light():
-    return handle_search(skin='light')
-
-@app.route('/dark/search')
-def search_dark():
-    return handle_search(skin='dark')
-
-def handle_search(skin='light'):
+def search():
+    prefs = get_prefs()
     query = request.args.get('q', '')
     if not query:
-        return render_home(skin)
-    # For now, just redirect to the wiki page
-    # We'll add real search in Phase 2
+        return redirect(f'/?{build_prefs_string(prefs)}')
+    
     title = query.replace(' ', '_')
-    if skin == 'dark':
-        return redirect(f'/dark/wiki/{title}')
-    return redirect(f'/wiki/{title}')
+    return redirect(f'/wiki/{title}?{build_prefs_string(prefs)}')
+
 
 @app.route('/wiki/<path:title>')
-def wiki_light(title):
-    return fetch_and_render(title, skin='light')
+def wiki(title):
+    prefs = get_prefs()
+    return fetch_and_render(title, prefs)
 
-@app.route('/dark/wiki/<path:title>')
-def wiki_dark(title):
-    return fetch_and_render(title, skin='dark')
 
-def fetch_and_render(title, skin='light'):
+def fetch_and_render(title, prefs):
+    skin = prefs['skin']
+    prefs_string = build_prefs_string(prefs)
+    skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
+    
     try:
         resp = requests.get(f'{WIKIPEDIA_BASE}/wiki/{title}', headers=HEADERS, timeout=10)
         resp.raise_for_status()
@@ -201,15 +207,15 @@ def fetch_and_render(title, skin='light'):
         return Response(render_error('Could not parse article'), mimetype='text/html')
     
     unwanted_selectors = [
-    'script', 'style', 'img', 'figure', 'table',
-    '.infobox', '.navbox', '.sidebar', '.mw-editsection',
-    '.reference', '.reflist', '.thumb', '.mw-empty-elt',
-    '.noprint', '.mw-jump-link', '.toc', '#coordinates',
-    '.hatnote', '.shortdescription', '.mbox-small',
-    '.ambox', '.cmbox', '.fmbox', '.imbox', '.ombox', '.tmbox',
-    '.portal', '.sistersitebox', '.noexcerpt',
-    '.mw-references-wrap', '.refbegin', '.refend',
-    '.navbox-styles', '.catlinks', '.mw-authority-control',
+        'script', 'style', 'img', 'figure', 'table',
+        '.infobox', '.navbox', '.sidebar', '.mw-editsection',
+        '.reference', '.reflist', '.thumb', '.mw-empty-elt',
+        '.noprint', '.mw-jump-link', '.toc', '#coordinates',
+        '.hatnote', '.shortdescription', '.mbox-small',
+        '.ambox', '.cmbox', '.fmbox', '.imbox', '.ombox', '.tmbox',
+        '.portal', '.sistersitebox', '.noexcerpt',
+        '.mw-references-wrap', '.refbegin', '.refend',
+        '.navbox-styles', '.catlinks', '.mw-authority-control',
     ]
 
     for selector in unwanted_selectors:
@@ -219,25 +225,25 @@ def fetch_and_render(title, skin='light'):
     for sup in content.find_all('sup', {'class': 'reference'}):
         sup.decompose()
 
-    body_content = process_content(content, skin)
+    body_content = process_content(content, prefs_string)
     wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/{title}'
 
-    return Response(render_page(title_text, body_content, wikipedia_url, skin, title), mimetype='text/html')
+    return Response(render_page(title_text, body_content, wikipedia_url, skin, title, prefs_string, skin_toggle_params, skin_toggle_text), mimetype='text/html')
 
-def render_page(title, content, wikipedia_url='', skin='light', title_slug=''):
-    if skin == 'light':
-        skin_toggle = f'<a href="/dark/wiki/{title_slug}">Dark Mode</a>'
-        home_url = '/'
-    else:
-        skin_toggle = f'<a href="/wiki/{title_slug}">Light Mode</a>'
-        home_url = '/dark/'
-    
+
+def render_page(title, content, wikipedia_url, skin, title_slug, prefs, skin_toggle_params, skin_toggle_text):
     return PAGE_TEMPLATE.format(
         doctype=DOCTYPE,
         meta=META,
         title=title,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
-        header=HEADER.format(wikipedia_url=wikipedia_url, skin_toggle=skin_toggle, home_url=home_url),
+        header=HEADER.format(
+            wikipedia_url=wikipedia_url,
+            title_slug=title_slug,
+            prefs=prefs,
+            skin_toggle_params=skin_toggle_params,
+            skin_toggle_text=skin_toggle_text,
+        ),
         content=content,
         footer=FOOTER,
     )
@@ -250,17 +256,17 @@ def render_error(message):
         message=message
     )
 
-def process_content(content, skin='light'):
+
+def process_content(content, prefs):
     lines = []
-    process_element(content, lines, skin)
+    process_element(content, lines, prefs)
     return '\n'.join(lines)
 
 
-
-def process_element(element, lines, skin='light'):
+def process_element(element, lines, prefs):
     for child in element.children:
         if child.name == 'p':
-            html = process_paragraph(child, skin)
+            html = process_paragraph(child, prefs)
             if html.strip():
                 lines.append(f'<p>{html}</p>')
 
@@ -271,12 +277,12 @@ def process_element(element, lines, skin='light'):
                 lines.append(f'<{child.name}>{text}</{child.name}>')
 
         elif child.name == 'ul':
-            list_html = process_list(child, ordered=False, skin=skin)
+            list_html = process_list(child, ordered=False, prefs=prefs)
             if list_html:
                 lines.append(list_html)
 
         elif child.name == 'ol':
-            list_html = process_list(child, ordered=True, skin=skin)
+            list_html = process_list(child, ordered=True, prefs=prefs)
             if list_html:
                 lines.append(list_html)
 
@@ -285,7 +291,7 @@ def process_element(element, lines, skin='light'):
                 if item.name == 'dt':
                     lines.append(f'<p><b>{clean_text(item.get_text())}</b></p>')
                 elif item.name == 'dd':
-                    html = process_paragraph(item)
+                    html = process_paragraph(item, prefs)
                     if html.strip():
                         lines.append(f'<p>{html}</p>')
 
@@ -302,12 +308,13 @@ def process_element(element, lines, skin='light'):
                     if text:
                         lines.append(f'<{h.name}>{text}</{h.name}>')
             else:
-                process_element(child, lines, skin)
+                process_element(child, lines, prefs)
 
         elif child.name == 'section':
-            process_element(child, lines, skin)
+            process_element(child, lines, prefs)
 
-def process_paragraph(element, skin='light'):
+
+def process_paragraph(element, prefs):
     result = []
     
     for child in element.children:
@@ -319,9 +326,7 @@ def process_paragraph(element, skin='light'):
                 continue
             
             if href.startswith('/wiki/') and ':' not in href:
-                if skin == 'dark':
-                    href = '/dark' + href
-                result.append(f'<a href="{href}">{text}</a>')
+                result.append(f'<a href="{href}?{prefs}">{text}</a>')
             else:
                 result.append(text)
         
@@ -339,7 +344,7 @@ def process_paragraph(element, skin='light'):
             result.append('<br>')
         
         elif child.name in ['span', 'small', 'sup', 'sub']:
-            result.append(process_paragraph(child, skin))
+            result.append(process_paragraph(child, prefs))
         
         elif child.string:
             result.append(re.sub(r'\s+', ' ', child.string))
@@ -354,10 +359,10 @@ def process_paragraph(element, skin='light'):
     return text.strip()
 
 
-def process_list(element, ordered=False, skin='light'):
+def process_list(element, ordered=False, prefs=''):
     items = []
     for li in element.find_all('li', recursive=False):
-        html = process_paragraph(li, skin)
+        html = process_paragraph(li, prefs)
         if html.strip():
             items.append(f'<li>{html}</li>')
 
@@ -374,6 +379,7 @@ def clean_text(text):
     text = re.sub(r'\[\d+\]', '', text)
     text = re.sub(r'\[citation needed\]', '', text)
     return text.strip()
+
 
 if __name__ == '__main__':
     debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
