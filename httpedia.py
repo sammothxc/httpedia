@@ -66,7 +66,7 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <input type="submit" value="Search">
 </form>
 <br>
-<h3>Quick Links</h3>
+<h3>Popular Links</h3>
 <p>
 <a href="/wiki/Computer?{prefs}">Computer</a> | 
 <a href="/wiki/Internet?{prefs}">Internet</a> | 
@@ -78,7 +78,8 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <h3>Other Retro-Friendly Sites</h3>
 <p>
 <a href="http://frogfind.com" target="_blank">FrogFind</a> | 
-<a href="http://68k.news" target="_blank">68k.news</a>
+<a href="http://68k.news" target="_blank">68k.news</a> | 
+<a href="http://textfiles.com/" target="_blank">textfiles.com</a>*
 </p>
 </center>
 {footer}
@@ -94,9 +95,6 @@ PAGE_TEMPLATE = '''{doctype}
 </head>
 <body {body_style}>
 {header}
-<center>
-<h2>{title}</h2>
-</center>
 {content}
 {footer}
 </body>
@@ -111,11 +109,11 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <b>sammothxc</b></a>, 2026.
 </small>
 <hr>
-<p><a href="/?{prefs}">Home/Search</a> | 
-<a href="{wikipedia_url}" target="_blank">View on Wikipedia</a> | 
+<small><a href="/?{prefs}">Home/Search</a> | 
 <a href="/wiki/{title_slug}?{skin_toggle_params}">{skin_toggle_text}</a> | 
 <a href="/wiki/{title_slug}?{img_toggle_params}">{img_toggle_text}</a> | 
-<a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a></p>
+<a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a>
+</small>
 </center>
 <hr>'''
 
@@ -124,6 +122,7 @@ FOOTER = '''<hr>
 <center>
 <small>
 Content sourced from <a href="https://en.wikipedia.org" target="_blank">Wikipedia</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank">CC BY-SA 4.0</a>.
+<a href="{wikipedia_url}" target="_blank">View this page on Wikipedia</a>
 </small>
 <br>
 <small>
@@ -210,7 +209,9 @@ def home():
         img_toggle_params=img_toggle_params,
         img_toggle_text=img_toggle_text,
         logo=logo,
-        footer=FOOTER,
+        footer=FOOTER.format(
+            wikipedia_url=WIKIPEDIA_BASE
+        )
     )
 
 
@@ -219,24 +220,61 @@ def search():
     prefs = get_prefs()
     query = request.args.get('q', '')
     if not query:
-        return redirect(f'/?{build_prefs_string(prefs)}')
+        prefs_string = build_prefs_string(prefs)
+        return redirect(f'/?{prefs_string}' if prefs_string else '/')
     
-    title = query.replace(' ', '_')
     prefs_string = build_prefs_string(prefs)
+    skin = prefs['skin']
+    skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
+    img_toggle_params, img_toggle_text = get_img_toggle(prefs)
     
-    redirect_url = f'/wiki/{title}?{prefs_string}' if prefs_string else f'/wiki/{title}' # microweb compatibility
+    results = search_wikipedia(query)
+    wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/Special:Search?search={query}'
+    title_text = f'Search: {query}'
+
+    if not results:
+        results_html = '<p>No results found.</p>'
+    else:
+        results_html = f'<center><p>Search Results for <strong>"{query}"</strong></p></center><ul>\n'
+        for r in results:
+            title_slug = r['title'].replace(' ', '_')
+            url = f'/wiki/{title_slug}?{prefs_string}' if prefs_string else f'/wiki/{title_slug}'
+            snippet = r['snippet'] if r['snippet'] else 'No description available.'
+            results_html += f'<li><a href="{url}">{r["title"]}</a> - {snippet}</li>\n'
+        results_html += '</ul>'
     
-    return f'''{DOCTYPE}
-<html>
-<head>
-{META}
-<meta http-equiv="refresh" content="0;url={redirect_url}">
-<title>Redirecting...</title>
-</head>
-<body>
-<p>Redirecting to <a href="{redirect_url}">{query}</a>...</p>
-</body>
-</html>'''
+    return Response(render_page(title_text, results_html, wikipedia_url, skin, query, prefs_string, skin_toggle_params, skin_toggle_text, img_toggle_params, img_toggle_text), mimetype='text/html')
+
+
+def search_wikipedia(query, limit=10):
+    try:
+        resp = requests.get(
+            f'{WIKIPEDIA_BASE}/w/api.php',
+            params={
+                'action': 'opensearch',
+                'search': query,
+                'limit': limit,
+                'format': 'json'
+            },
+            headers=HEADERS,
+            timeout=10
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        
+        # opensearch returns: [query, [titles], [descriptions], [urls]]
+        titles = data[1] if len(data) > 1 else []
+        descriptions = data[2] if len(data) > 2 else []
+        
+        results = []
+        for i, title in enumerate(titles):
+            results.append({
+                'title': title,
+                'snippet': descriptions[i] if i < len(descriptions) else ''
+            })
+        return results
+    except:
+        return []
 
 
 @app.route('/wiki/<path:title>')
@@ -299,7 +337,6 @@ def render_page(title, content, wikipedia_url, skin, title_slug, prefs, skin_tog
         title=title,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
         header=HEADER.format(
-            wikipedia_url=wikipedia_url,
             title_slug=title_slug,
             prefs=prefs,
             skin_toggle_params=skin_toggle_params,
@@ -308,7 +345,9 @@ def render_page(title, content, wikipedia_url, skin, title_slug, prefs, skin_tog
             img_toggle_text=img_toggle_text,
         ),
         content=content,
-        footer=FOOTER,
+        footer=FOOTER.format(
+            wikipedia_url=wikipedia_url
+        ),
     )
 
 
