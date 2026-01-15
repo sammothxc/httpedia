@@ -38,7 +38,7 @@ HOME_TEMPLATE = '''{doctype}
 <hr>
 <br>
 <!-- <h1>HTTPedia</h1> -->
-<img src="/static/httpedia-logo-trans.gif" alt="HTTPedia Logo" width="388" height="78">
+<img src="/static/httpedia-logo.gif" alt="HTTPedia Logo" width="388" height="78">
 <br>
 <small>
 Basic HTML Wikipedia proxy for retro computers. Built by 
