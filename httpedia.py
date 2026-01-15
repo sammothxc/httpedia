@@ -196,7 +196,21 @@ def search():
         return redirect(f'/?{build_prefs_string(prefs)}')
     
     title = query.replace(' ', '_')
-    return redirect(f'/wiki/{title}?{build_prefs_string(prefs)}')
+    prefs_string = build_prefs_string(prefs)
+    
+    redirect_url = f'/wiki/{title}?{prefs_string}' if prefs_string else f'/wiki/{title}' # microweb compatibility
+    
+    return f'''{DOCTYPE}
+<html>
+<head>
+{META}
+<meta http-equiv="refresh" content="0;url={redirect_url}">
+<title>Redirecting...</title>
+</head>
+<body>
+<p>Redirecting to <a href="{redirect_url}">{query}</a>...</p>
+</body>
+</html>'''
 
 
 @app.route('/wiki/<path:title>')
