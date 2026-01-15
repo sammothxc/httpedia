@@ -1,7 +1,7 @@
 import os
 import requests
 import re
-from flask import Flask, Response, request, redirect
+from flask import Flask, Response, request, redirect, send_file
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 load_dotenv()
@@ -37,8 +37,9 @@ HOME_TEMPLATE = '''{doctype}
 </small>
 <hr>
 <br>
-<h1>HTTPedia</h1>
-<!--<img src="./logo.gif" alt="HTTPedia Logo" width="128" height="128"> -->
+<!-- <h1>HTTPedia</h1> -->
+<img src="/static/httpedia-logo-trans.gif" alt="HTTPedia Logo" width="388" height="78">
+<br>
 <small>
 Basic HTML Wikipedia proxy for retro computers. Built by 
 <a href="https://github.com/sammothxc/httpedia" target="_blank">
