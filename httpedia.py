@@ -60,20 +60,18 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <br>
 <br>
 <form action="/search" method="get">
-<input type="text" name="q" size="30">
-<input type="hidden" name="skin" value="{skin}">
-<input type="hidden" name="img" value="{img}">
+<input type="text" name="{input_name}" size="30">
 <input type="submit" value="Search">
 </form>
 <br>
 <h3>Popular Links</h3>
 <p>
-<a href="/wiki/Computer?{prefs}">Computer</a> | 
-<a href="/wiki/Internet?{prefs}">Internet</a> | 
-<a href="/wiki/World_Wide_Web?{prefs}">World Wide Web</a> | 
-<a href="/wiki/Compaq_Portable?{prefs}">Compaq Portable</a> | 
-<a href="/wiki/IBM_PC?{prefs}">IBM PC</a> | 
-<a href="/wiki/Apple_II?{prefs}">Apple II</a>
+<a href="{link_computer}">Computer</a> | 
+<a href="{link_internet}">Internet</a> | 
+<a href="{link_www}">World Wide Web</a> | 
+<a href="{link_compaq}">Compaq Portable</a> | 
+<a href="{link_ibm}">IBM PC</a> | 
+<a href="{link_apple}">Apple II</a>
 </p>
 <h3>Other Retro-Friendly Sites</h3>
 <p>
@@ -193,28 +191,67 @@ def home():
     else:
         logo = '<h1>HTTPedia</h1>'
 
+    input_name = 'q'
+    if skin == 'dark':
+        input_name += '_dark'
+    if img == '0':
+        input_name += '_noimg'
+
+    def build_link(path):
+        if prefs_string:
+            return f'{path}?{prefs_string}'
+        return path
+
     return HOME_TEMPLATE.format(
         doctype=DOCTYPE,
         meta=META,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
-        skin=skin,
-        img=img,
-        prefs=prefs_string,
         skin_toggle_params=skin_toggle_params,
         skin_toggle_text=skin_toggle_text,
         img_toggle_params=img_toggle_params,
         img_toggle_text=img_toggle_text,
         logo=logo,
-        footer=FOOTER.format(
-            wikipedia_url=WIKIPEDIA_BASE
-        )
+        input_name=input_name,
+        link_computer=build_link('/wiki/Computer'),
+        link_internet=build_link('/wiki/Internet'),
+        link_www=build_link('/wiki/World_Wide_Web'),
+        link_compaq=build_link('/wiki/Compaq_Portable'),
+        link_ibm=build_link('/wiki/IBM_PC'),
+        link_apple=build_link('/wiki/Apple_II'),
     )
 
 
 @app.route('/search')
 def search():
-    prefs = get_prefs()
-    query = request.args.get('q', '')
+    query = None
+    skin = 'light'
+    img = '1'
+    
+    # i am proud of the workaround for not being able to use input type="hidden" in Microweb
+    if request.args.get('q_dark_noimg') is not None:
+        query = request.args.get('q_dark_noimg')
+        skin = 'dark'
+        img = '0'
+    elif request.args.get('q_dark') is not None:
+        query = request.args.get('q_dark')
+        skin = 'dark'
+        img = '1'
+    elif request.args.get('q_noimg') is not None:
+        query = request.args.get('q_noimg')
+        skin = 'light'
+        img = '0'
+    elif request.args.get('q') is not None:
+        query = request.args.get('q')
+        skin = 'light'
+        img = '1'
+    
+    if request.args.get('skin'):
+        skin = request.args.get('skin')
+    if request.args.get('img'):
+        img = request.args.get('img')
+    
+    prefs = {'skin': skin, 'img': img}
+    
     if not query:
         prefs_string = build_prefs_string(prefs)
         return redirect(f'/?{prefs_string}' if prefs_string else '/')
