@@ -196,6 +196,7 @@ def home():
         url = f'{path}?{prefs_string}' if prefs_string else path
         return f'<a href="{url}">{text}</a>'
 
+    # implement actual popular links later on
     popular_links = [
         build_link('/wiki/Computer', 'Computer'),
         build_link('/wiki/Internet', 'Internet'),
