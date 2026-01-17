@@ -4,6 +4,9 @@ import re
 from flask import Flask, Response, request, redirect, send_file
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from PIL import Image
+from io import BytesIO
+import hashlib
 
 
 load_dotenv()
@@ -324,8 +327,48 @@ def wiki(title):
     return fetch_and_render(title, prefs)
 
 
+@app.route('/img/<path:image_path>')
+def proxy_image(image_path):
+    prefs = get_prefs()
+    if prefs['img'] == '0':
+        return Response(b'GIF89a\x01\x00\x01\x00\x00\x00\x00!', mimetype='image/gif')
+    
+    image_url = f'https://upload.wikimedia.org/wikipedia/commons/{image_path}'
+    
+    gif_data = fetch_and_convert_image(image_url)
+    if gif_data:
+        return Response(gif_data, mimetype='image/gif')
+    else:
+        return Response(b'', status=404)
+
+
+def fetch_and_convert_image(image_url, max_width=200):
+    try:
+        resp = requests.get(image_url, headers=HEADERS, timeout=10)
+        resp.raise_for_status()
+        
+        img = Image.open(BytesIO(resp.content))
+        
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+        
+        if img.width > max_width:
+            ratio = max_width / img.width
+            new_height = int(img.height * ratio)
+            img = img.resize((max_width, new_height), Image.LANCZOS)
+        
+        output = BytesIO()
+        img.save(output, format='GIF')
+        output.seek(0)
+        
+        return output.getvalue()
+    except:
+        return None
+
+
 def fetch_and_render(title, prefs):
     skin = prefs['skin']
+    img_enabled = prefs['img'] == '1'
     prefs_string = build_prefs_string(prefs)
     skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
     img_toggle_params, img_toggle_text = get_img_toggle(prefs)
@@ -346,6 +389,19 @@ def fetch_and_render(title, prefs):
     if not content:
         return Response(render_error('Could not parse article'), mimetype='text/html')
     
+    article_image = ''
+    if img_enabled:
+        first_img = content.find('img', src=True)
+        if first_img:
+            src = first_img.get('src', '')
+            if 'upload.wikimedia.org' in src:
+                if '/commons/' in src:
+                    img_path = src.split('/commons/')[-1]
+                    article_image = f'<center><img src="/img/{img_path}" alt="{title_text}"></center><br>'
+                elif '/en/' in src:
+                    img_path = src.split('/en/')[-1]
+                    article_image = f'<center><img src="/img/en/{img_path}" alt="{title_text}"></center><br>'
+    
     unwanted_selectors = [
         'script', 'style', 'img', 'figure', 'table',
         '.infobox', '.navbox', '.sidebar', '.mw-editsection',
@@ -365,7 +421,8 @@ def fetch_and_render(title, prefs):
     for sup in content.find_all('sup', {'class': 'reference'}):
         sup.decompose()
 
-    body_content = f'<center><h2>{title}</h2></center>'
+    body_content = f'<center><h2>{title_text}</h2></center>'
+    body_content += article_image
     body_content += process_content(content, prefs_string)
     wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/{title}'
 
