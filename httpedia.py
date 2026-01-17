@@ -1,16 +1,16 @@
 import os
 import requests
 import re
+import logging
+import hashlib
 from flask import Flask, Response, request, redirect, send_file
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from PIL import Image
 from io import BytesIO
-import hashlib
 
 
-load_dotenv()
-app = Flask(__name__)
+LOG_DIR = '/var/log/httpedia'
 
 
 DEFAULTS = {
@@ -136,6 +136,20 @@ ERROR_TEMPLATE = '''{doctype}
 <p><a href="/">Home</a></p>
 </body>
 </html>'''
+
+
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
+
+logging.basicConfig(
+    filename=f'{LOG_DIR}/access.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(message)s'
+)
+
+
+load_dotenv()
+app = Flask(__name__)
 
 
 def get_prefs():
@@ -340,6 +354,12 @@ def proxy_image(image_path):
         return Response(gif_data, mimetype='image/gif')
     else:
         return Response(b'', status=404)
+
+
+@app.after_request
+def log_response(response):
+    logging.info(f'{request.remote_addr} - {request.method} {request.path} - {response.status_code}')
+    return response
 
 
 def fetch_and_convert_image(image_url, max_width=200):
