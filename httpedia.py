@@ -66,12 +66,7 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <br>
 <h3>Popular Links</h3>
 <p>
-<a href="{link_computer}">Computer</a> | 
-<a href="{link_internet}">Internet</a> | 
-<a href="{link_www}">World Wide Web</a> | 
-<a href="{link_compaq}">Compaq Portable</a> | 
-<a href="{link_ibm}">IBM PC</a> | 
-<a href="{link_apple}">Apple II</a>
+{popular_links}
 </p>
 <h3>Other Retro-Friendly Sites</h3>
 <p>
@@ -197,10 +192,18 @@ def home():
     if img == '0':
         input_name += '_noimg'
 
-    def build_link(path):
-        if prefs_string:
-            return f'{path}?{prefs_string}'
-        return path
+    def build_link(path, text):
+        url = f'{path}?{prefs_string}' if prefs_string else path
+        return f'<a href="{url}">{text}</a>'
+
+    popular_links = [
+        build_link('/wiki/Computer', 'Computer'),
+        build_link('/wiki/Internet', 'Internet'),
+        build_link('/wiki/World_Wide_Web', 'World Wide Web'),
+        build_link('/wiki/Compaq_Portable', 'Compaq Portable'),
+        build_link('/wiki/IBM_PC', 'IBM PC'),
+        build_link('/wiki/Apple_II', 'Apple II'),
+    ]
 
     return HOME_TEMPLATE.format(
         doctype=DOCTYPE,
@@ -212,12 +215,7 @@ def home():
         img_toggle_text=img_toggle_text,
         logo=logo,
         input_name=input_name,
-        link_computer=build_link('/wiki/Computer'),
-        link_internet=build_link('/wiki/Internet'),
-        link_www=build_link('/wiki/World_Wide_Web'),
-        link_compaq=build_link('/wiki/Compaq_Portable'),
-        link_ibm=build_link('/wiki/IBM_PC'),
-        link_apple=build_link('/wiki/Apple_II'),
+        popular_links=' | \n'.join(popular_links),
     )
 
 
