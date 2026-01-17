@@ -2,5 +2,5 @@ flask
 requests
 beautifulsoup4
 lxml
-dotenv
+python-dotenv
 Pillow
