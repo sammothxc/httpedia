@@ -403,7 +403,8 @@ def fetch_and_render(title, prefs):
         resp = requests.get(f'{WIKIPEDIA_BASE}/wiki/{title}', headers=HEADERS, timeout=10)
         resp.raise_for_status()
     except requests.RequestException as e:
-        return Response(render_error(f'Could not fetch article: {e}'), mimetype='text/html')
+        app.logger.error(f'Could not fetch article {title}: {e}')
+        return Response(render_error('Could not fetch article. Please try again.'), mimetype='text/html')
 
     soup = BeautifulSoup(resp.text, 'lxml')
 
