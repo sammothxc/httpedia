@@ -120,7 +120,8 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 FOOTER = '''<hr>
 <center>
 <small>
-Content sourced from <a href="{wikipedia_url}" target="_blank">this Wikipedia page</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank">CC BY-SA 4.0</a>.
+Content sourced from <a href="{wikipedia_url}" target="_blank">this Wikipedia page</a> under 
+<a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank">CC BY-SA 4.0</a>.
 Donations support HTTPedia hosting, not Wikipedia.
 </small>
 <br>
@@ -238,8 +239,18 @@ def search():
             results_html += f'<li><a href="{url}">{r["title"]}</a> - {snippet}</li>\n'
         results_html += '</ul>'
     
-    return Response(render_page(title_text, results_html, wikipedia_url, skin, query, prefs_string, skin_toggle_params, skin_toggle_text, img_toggle_params, img_toggle_text), mimetype='text/html')
-
+    return Response(render_page(
+        title_text, 
+        results_html, 
+        wikipedia_url, 
+        skin, 
+        query, 
+        prefs_string, 
+        skin_toggle_params, 
+        skin_toggle_text, 
+        img_toggle_params, 
+        img_toggle_text
+    ), mimetype='text/html')
 
 def search_wikipedia(query, limit=10):
     try:
@@ -323,7 +334,18 @@ def fetch_and_render(title, prefs):
     body_content += process_content(content, prefs_string)
     wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/{title}'
 
-    return Response(render_page(title_text, body_content, wikipedia_url, skin, title, prefs_string, skin_toggle_params, skin_toggle_text, img_toggle_params, img_toggle_text), mimetype='text/html')
+    return Response(render_page(
+        title_text, 
+        body_content, 
+        wikipedia_url, 
+        skin, 
+        title, 
+        prefs_string, 
+        skin_toggle_params, 
+        skin_toggle_text, 
+        img_toggle_params, 
+        img_toggle_text
+    ), mimetype='text/html')
 
 
 def render_page(title, content, wikipedia_url, skin, title_slug, prefs, skin_toggle_params, skin_toggle_text, img_toggle_params, img_toggle_text):
