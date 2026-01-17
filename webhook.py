@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 
 WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET', 'change-me')
-REPO_PATH = '/root/httpedia'
+REPO_PATH = './'
 SERVICE_NAME = 'httpedia'
 
 @app.route('/webhook', methods=['POST'])
