@@ -3,7 +3,10 @@ import requests
 import re
 import logging
 import hashlib
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask import Flask, Response, request, redirect, send_file
+from markupsafe import escape
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from PIL import Image
@@ -147,9 +150,15 @@ logging.basicConfig(
     format='%(asctime)s - %(message)s'
 )
 
-
 load_dotenv()
+
 app = Flask(__name__)
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"]
+)
+limiter.init_app(app)
 
 
 def get_prefs():
