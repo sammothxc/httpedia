@@ -347,6 +347,12 @@ def proxy_image(image_path):
     if prefs['img'] == '0':
         return Response(b'GIF89a\x01\x00\x01\x00\x00\x00\x00!', mimetype='image/gif')
     
+    if not re.match(r'^[a-zA-Z0-9/_.-]+$', image_path):
+        return Response(b'', status=400)
+    
+    if '..' in image_path:
+        return Response(b'', status=400)
+    
     image_url = f'https://upload.wikimedia.org/wikipedia/commons/{image_path}'
     
     gif_data = fetch_and_convert_image(image_url)
