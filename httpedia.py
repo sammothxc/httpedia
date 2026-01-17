@@ -160,6 +160,8 @@ limiter = Limiter(
 )
 limiter.init_app(app)
 
+Image.MAX_IMAGE_PIXELS = 10000000
+
 
 def get_prefs():
     skin = request.args.get('skin', 'light')
@@ -382,7 +384,11 @@ def fetch_and_convert_image(image_url, max_width=200):
         resp = requests.get(image_url, headers=HEADERS, timeout=10)
         resp.raise_for_status()
         
+        if len(resp.content) > 5 * 1024 * 1024:
+            return None
+        
         img = Image.open(BytesIO(resp.content))
+
         
         if img.mode in ('RGBA', 'P'):
             img = img.convert('RGB')
