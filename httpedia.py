@@ -231,7 +231,7 @@ def search():
     if not results:
         results_html = '<p>No results found.</p>'
     else:
-        results_html = f'<center><p>Search Results for <strong>"{query}"</strong></p></center><ul>\n'
+        results_html = f'<center><p>Search Results for <b>{query}</b></p></center><ul>\n'
         for r in results:
             title_slug = r['title'].replace(' ', '_')
             url = f'/wiki/{title_slug}?{prefs_string}' if prefs_string else f'/wiki/{title_slug}'
