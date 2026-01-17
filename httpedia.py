@@ -220,7 +220,6 @@ def search():
         return redirect(f'/?{prefs_string}' if prefs_string else '/')
     
     prefs_string = build_prefs_string(prefs)
-    skin = prefs['skin']
     skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
     img_toggle_params, img_toggle_text = get_img_toggle(prefs)
     
