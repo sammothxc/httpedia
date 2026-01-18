@@ -122,8 +122,8 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 </small>
 <hr>
 <small><a href="/?{prefs}">Home/Search</a> | 
-<a href="/wiki/{title_slug}?{skin_toggle_params}">{skin_toggle_text}</a> | 
-<a href="/wiki/{title_slug}?{img_toggle_params}">{img_toggle_text}</a> | 
+<a href="/{path}?{skin_toggle_params}">{skin_toggle_text}</a> | 
+<a href="/{path}?{img_toggle_params}">{img_toggle_text}</a> | 
 <a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a>
 </small>
 </center>
@@ -265,6 +265,7 @@ def home():
         logo=logo,
         input_name=input_name,
         popular_links=' | \n'.join(popular_links),
+        prefs=prefs_string
     )
 
 
@@ -543,18 +544,24 @@ def fetch_and_render(title, prefs):
     body_content += process_content(content, prefs_string)
     wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/{title}'
 
-    return Response(render_page(
-        title_text, 
-        body_content, 
-        wikipedia_url, 
-        skin, 
-        title, 
-        prefs_string, 
-        skin_toggle_params, 
-        skin_toggle_text, 
-        img_toggle_params, 
-        img_toggle_text
-    ), mimetype='text/html')
+    return PAGE_TEMPLATE.format(
+        doctype=DOCTYPE,
+        meta=META,
+        title=title_text,
+        body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
+        header=HEADER.format(
+            path='wiki/' + title,
+            prefs=prefs_string,
+            skin_toggle_params=skin_toggle_params,
+            skin_toggle_text=skin_toggle_text,
+            img_toggle_params=img_toggle_params,
+            img_toggle_text=img_toggle_text,
+        ),
+        content=body_content,
+        footer=FOOTER.format(
+            wikipedia_url=wikipedia_url
+        ),
+    )
 
 
 def render_page(title, content, wikipedia_url, skin, title_slug, prefs, skin_toggle_params, skin_toggle_text, img_toggle_params, img_toggle_text):
@@ -564,7 +571,7 @@ def render_page(title, content, wikipedia_url, skin, title_slug, prefs, skin_tog
         title=title,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
         header=HEADER.format(
-            title_slug=title_slug,
+            path='wiki/' + title_slug,
             prefs=prefs,
             skin_toggle_params=skin_toggle_params,
             skin_toggle_text=skin_toggle_text,
