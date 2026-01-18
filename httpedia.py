@@ -294,7 +294,7 @@ def search():
     if not results:
         results_html = '<p>No results found.</p>'
     else:
-        results_html = f'<center><p>Search Results for <b>{query}</b></p></center><ul>\n'
+        results_html = f'<center><p>Search Results for <b>{escape(query)}</b></p></center><ul>\n'
         for r in results:
             title_slug = r['title'].replace(' ', '_')
             url = f'/wiki/{title_slug}?{prefs_string}' if prefs_string else f'/wiki/{title_slug}'
@@ -439,10 +439,10 @@ def fetch_and_render(title, prefs):
             if 'upload.wikimedia.org' in src:
                 if '/commons/' in src:
                     img_path = src.split('/commons/')[-1]
-                    article_image = f'<center><img src="/img/{img_path}" alt="{title_text}"></center><br>'
+                    article_image = f'<center><img src="/img/{img_path}" alt="{escape(title_text)}"></center><br>'
                 elif '/en/' in src:
                     img_path = src.split('/en/')[-1]
-                    article_image = f'<center><img src="/img/en/{img_path}" alt="{title_text}"></center><br>'
+                    article_image = f'<center><img src="/img/en/{img_path}" alt="{escape(title_text)}"></center><br>'
     
     unwanted_selectors = [
         'script', 'style', 'img', 'figure', 'table',
@@ -463,7 +463,7 @@ def fetch_and_render(title, prefs):
     for sup in content.find_all('sup', {'class': 'reference'}):
         sup.decompose()
 
-    body_content = f'<center><h2>{title_text}</h2></center>'
+    body_content = f'<center><h2>{escape(title_text)}</h2></center>'
     body_content += article_image
     body_content += process_content(content, prefs_string)
     wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/{title}'
