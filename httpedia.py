@@ -345,6 +345,41 @@ def extract_article_images(content, title_text, mode, max_images=MAX_IMAGES):
     return hero_html, gallery_html
 
 
+def extract_infobox(content):
+    infobox = content.find(['table', 'div'], class_=re.compile(r'infobox'))
+    if not infobox:
+        return ''
+    
+    items = []
+    
+    rows = infobox.find_all('tr')
+    for row in rows:
+        label_cell = row.find(['th'], class_=re.compile(r'infobox-label'))
+        data_cell = row.find(['td'], class_=re.compile(r'infobox-data'))
+        
+        if not label_cell:
+            label_cell = row.find('th')
+        if not data_cell:
+            data_cell = row.find('td')
+        
+        if label_cell and data_cell:
+            label = clean_text(label_cell.get_text())
+            value = clean_text(data_cell.get_text())
+            
+            if label and value:
+                items.append((label, value))
+    
+    if not items:
+        return ''
+    
+    html = '<ul>\n'
+    for label, value in items:
+        html += f'<li><b>{escape(label)}:</b> {escape(value)}</li>\n'
+    html += '</ul>\n<hr>\n'
+    
+    return html
+
+
 @app.route('/')
 def home():
     prefs = get_prefs()
@@ -563,6 +598,7 @@ def wiki(title):
     if not content:
         return Response(render_error('Could not parse article'), mimetype='text/html')
     
+    infobox_html = extract_infobox(content)
     hero_image, gallery_html = extract_article_images(content, title_text, img_mode)
     
     unwanted_selectors = [
@@ -586,6 +622,7 @@ def wiki(title):
 
     body_content = f'<center><h2>{escape(title_text)}</h2></center>'
     body_content += hero_image
+    body_content += infobox_html
     body_content += process_content(content, prefs_string)
     body_content += gallery_html
 
