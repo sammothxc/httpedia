@@ -323,18 +323,27 @@ def search():
             results_html += f'<li><a href="{url}">{r["title"]}</a> - {snippet}</li>\n'
         results_html += '</ul>'
     
-    return Response(render_page(
-        title_text, 
-        results_html, 
-        wikipedia_url, 
-        skin, 
-        query, 
-        prefs_string, 
-        skin_toggle_params, 
-        skin_toggle_text, 
-        img_toggle_params, 
-        img_toggle_text
-    ), mimetype='text/html')
+
+
+    return PAGE_TEMPLATE.format(
+        doctype=DOCTYPE,
+        meta=META,
+        title=title_text,
+        body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
+        header=HEADER.format(
+            path=query,
+            prefs=prefs_string,
+            skin_toggle_params=skin_toggle_params,
+            skin_toggle_text=skin_toggle_text,
+            img_toggle_params=img_toggle_params,
+            img_toggle_text=img_toggle_text,
+        ),
+        content=results_html,
+        footer=FOOTER.format(
+            wikipedia_url=wikipedia_url
+        ),
+    )
+
 
 def search_wikipedia(query, limit=10):
     try:
@@ -370,7 +379,84 @@ def search_wikipedia(query, limit=10):
 @app.route('/wiki/<path:title>')
 def wiki(title):
     prefs = get_prefs()
-    return fetch_and_render(title, prefs)
+    skin = prefs['skin']
+    img_enabled = prefs['img'] == '1'
+    prefs_string = build_prefs_string(prefs)
+    skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
+    img_toggle_params, img_toggle_text = get_img_toggle(prefs)
+
+    try:
+        resp = requests.get(f'{WIKIPEDIA_BASE}/wiki/{title}', headers=HEADERS, timeout=10)
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        app.logger.error(f'Could not fetch article {title}: {e}')
+        return Response(render_error('Could not fetch article. Please try again.'), mimetype='text/html')
+
+    soup = BeautifulSoup(resp.text, 'lxml')
+
+    page_title = soup.find('h1', {'id': 'firstHeading'})
+    title_text = page_title.get_text() if page_title else title.replace('_', ' ')
+
+    all_outputs = soup.find_all('div', {'class': 'mw-parser-output'})
+    content = max(all_outputs, key=lambda div: len(list(div.children))) if all_outputs else None
+    if not content:
+        return Response(render_error('Could not parse article'), mimetype='text/html')
+    
+    article_image = ''
+    if img_enabled:
+        first_img = content.find('img', src=True)
+        if first_img:
+            src = first_img.get('src', '')
+            if 'upload.wikimedia.org' in src:
+                if '/commons/' in src:
+                    img_path = src.split('/commons/')[-1]
+                    article_image = f'<center><img src="/img/{img_path}" alt="{escape(title_text)}"></center><br>'
+                elif '/en/' in src:
+                    img_path = src.split('/en/')[-1]
+                    article_image = f'<center><img src="/img/en/{img_path}" alt="{escape(title_text)}"></center><br>'
+    
+    unwanted_selectors = [
+        'script', 'style', 'img', 'figure', 'table',
+        '.infobox', '.navbox', '.sidebar', '.mw-editsection',
+        '.reference', '.reflist', '.thumb', '.mw-empty-elt',
+        '.noprint', '.mw-jump-link', '.toc', '#coordinates',
+        '.hatnote', '.shortdescription', '.mbox-small',
+        '.ambox', '.cmbox', '.fmbox', '.imbox', '.ombox', '.tmbox',
+        '.portal', '.sistersitebox', '.noexcerpt',
+        '.mw-references-wrap', '.refbegin', '.refend',
+        '.navbox-styles', '.catlinks', '.mw-authority-control',
+    ]
+
+    for selector in unwanted_selectors:
+        for tag in content.select(selector):
+            tag.decompose()
+
+    for sup in content.find_all('sup', {'class': 'reference'}):
+        sup.decompose()
+
+    body_content = f'<center><h2>{escape(title_text)}</h2></center>'
+    body_content += article_image
+    body_content += process_content(content, prefs_string)
+    wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/{title}'
+
+    return PAGE_TEMPLATE.format(
+        doctype=DOCTYPE,
+        meta=META,
+        title=title_text,
+        body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
+        header=HEADER.format(
+            path='wiki/' + title,
+            prefs=prefs_string,
+            skin_toggle_params=skin_toggle_params,
+            skin_toggle_text=skin_toggle_text,
+            img_toggle_params=img_toggle_params,
+            img_toggle_text=img_toggle_text,
+        ),
+        content=body_content,
+        footer=FOOTER.format(
+            wikipedia_url=wikipedia_url
+        ),
+    )
 
 
 @app.route('/img/<path:image_path>')
@@ -481,108 +567,6 @@ def fetch_and_convert_image(image_url, max_width=200):
         return output.getvalue()
     except:
         return None
-
-
-def fetch_and_render(title, prefs):
-    skin = prefs['skin']
-    img_enabled = prefs['img'] == '1'
-    prefs_string = build_prefs_string(prefs)
-    skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
-    img_toggle_params, img_toggle_text = get_img_toggle(prefs)
-
-    try:
-        resp = requests.get(f'{WIKIPEDIA_BASE}/wiki/{title}', headers=HEADERS, timeout=10)
-        resp.raise_for_status()
-    except requests.RequestException as e:
-        app.logger.error(f'Could not fetch article {title}: {e}')
-        return Response(render_error('Could not fetch article. Please try again.'), mimetype='text/html')
-
-    soup = BeautifulSoup(resp.text, 'lxml')
-
-    page_title = soup.find('h1', {'id': 'firstHeading'})
-    title_text = page_title.get_text() if page_title else title.replace('_', ' ')
-
-    all_outputs = soup.find_all('div', {'class': 'mw-parser-output'})
-    content = max(all_outputs, key=lambda div: len(list(div.children))) if all_outputs else None
-    if not content:
-        return Response(render_error('Could not parse article'), mimetype='text/html')
-    
-    article_image = ''
-    if img_enabled:
-        first_img = content.find('img', src=True)
-        if first_img:
-            src = first_img.get('src', '')
-            if 'upload.wikimedia.org' in src:
-                if '/commons/' in src:
-                    img_path = src.split('/commons/')[-1]
-                    article_image = f'<center><img src="/img/{img_path}" alt="{escape(title_text)}"></center><br>'
-                elif '/en/' in src:
-                    img_path = src.split('/en/')[-1]
-                    article_image = f'<center><img src="/img/en/{img_path}" alt="{escape(title_text)}"></center><br>'
-    
-    unwanted_selectors = [
-        'script', 'style', 'img', 'figure', 'table',
-        '.infobox', '.navbox', '.sidebar', '.mw-editsection',
-        '.reference', '.reflist', '.thumb', '.mw-empty-elt',
-        '.noprint', '.mw-jump-link', '.toc', '#coordinates',
-        '.hatnote', '.shortdescription', '.mbox-small',
-        '.ambox', '.cmbox', '.fmbox', '.imbox', '.ombox', '.tmbox',
-        '.portal', '.sistersitebox', '.noexcerpt',
-        '.mw-references-wrap', '.refbegin', '.refend',
-        '.navbox-styles', '.catlinks', '.mw-authority-control',
-    ]
-
-    for selector in unwanted_selectors:
-        for tag in content.select(selector):
-            tag.decompose()
-
-    for sup in content.find_all('sup', {'class': 'reference'}):
-        sup.decompose()
-
-    body_content = f'<center><h2>{escape(title_text)}</h2></center>'
-    body_content += article_image
-    body_content += process_content(content, prefs_string)
-    wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/{title}'
-
-    return PAGE_TEMPLATE.format(
-        doctype=DOCTYPE,
-        meta=META,
-        title=title_text,
-        body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
-        header=HEADER.format(
-            path='wiki/' + title,
-            prefs=prefs_string,
-            skin_toggle_params=skin_toggle_params,
-            skin_toggle_text=skin_toggle_text,
-            img_toggle_params=img_toggle_params,
-            img_toggle_text=img_toggle_text,
-        ),
-        content=body_content,
-        footer=FOOTER.format(
-            wikipedia_url=wikipedia_url
-        ),
-    )
-
-
-def render_page(title, content, wikipedia_url, skin, title_slug, prefs, skin_toggle_params, skin_toggle_text, img_toggle_params, img_toggle_text):
-    return PAGE_TEMPLATE.format(
-        doctype=DOCTYPE,
-        meta=META,
-        title=title,
-        body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
-        header=HEADER.format(
-            path='wiki/' + title_slug,
-            prefs=prefs,
-            skin_toggle_params=skin_toggle_params,
-            skin_toggle_text=skin_toggle_text,
-            img_toggle_params=img_toggle_params,
-            img_toggle_text=img_toggle_text,
-        ),
-        content=content,
-        footer=FOOTER.format(
-            wikipedia_url=wikipedia_url
-        ),
-    )
 
 
 def render_error(message):
