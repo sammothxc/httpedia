@@ -2,10 +2,10 @@ import os
 import requests
 import re
 import logging
-import hashlib
+from logging.handlers import RotatingFileHandler
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask import Flask, Response, request, redirect, send_file
+from flask import Flask, Response, request, redirect
 from markupsafe import escape
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -144,11 +144,17 @@ ERROR_TEMPLATE = '''{doctype}
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
-logging.basicConfig(
-    filename=f'{LOG_DIR}/access.log',
-    level=logging.INFO,
-    format='%(asctime)s - %(message)s'
+file_handler = RotatingFileHandler(
+    f'{LOG_DIR}/access.log',
+    maxBytes=1024*1024,
+    backupCount=5
 )
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+file_handler.setLevel(logging.INFO)
+
+access_logger = logging.getLogger('httpedia.access')
+access_logger.setLevel(logging.INFO)
+access_logger.addHandler(file_handler)
 
 load_dotenv()
 
@@ -375,7 +381,7 @@ def proxy_image(image_path):
 
 @app.after_request
 def log_response(response):
-    logging.info(f'{request.remote_addr} - {request.method} {request.path} - {response.status_code}')
+    access_logger.info(f'{request.remote_addr} - {request.method} {request.path} - {response.status_code}')
     return response
 
 
