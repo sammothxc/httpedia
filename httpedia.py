@@ -51,8 +51,8 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 </small>
 <hr>
 <small><a href="/?{prefs_string}">Home/Search</a> | 
-<a href="/{path}?{skin_toggle_params}">{skin_toggle_text}</a> | 
-<a href="/{path}?{img_toggle_params}">{img_toggle_text}</a> | 
+<a href={skin_toggle}</a> | 
+<a href={img_toggle}</a> | 
 <a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a>
 </small>
 </center>
@@ -307,6 +307,8 @@ def search():
     prefs_string = build_prefs_string(prefs)
     skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
     img_toggle_params, img_toggle_text = get_img_toggle(prefs)
+    skin_toggle = f'/search?{skin_toggle_params}&q={query}' if prefs_string else f'/search?skin={("dark" if skin=="light" else "light")}&q={query}'
+    img_toggle = f'/search?{img_toggle_params}&q={query}' if prefs_string else f'/search?img={("1" if img=="0" else "0")}&q={query}'
     
     results = search_wikipedia(query)
     wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/Special:Search?search={query}'
@@ -329,12 +331,10 @@ def search():
         title_text=title_text,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
         header=HEADER.format(
-            path=query,
+            path='search?' + query, # x
             prefs_string=prefs_string,
-            skin_toggle_params=skin_toggle_params,
-            skin_toggle_text=skin_toggle_text,
-            img_toggle_params=img_toggle_params,
-            img_toggle_text=img_toggle_text,
+            skin_toggle=skin_toggle,
+            img_toggle=img_toggle,
         ),
         content=content,
         footer=FOOTER.format(
@@ -380,8 +380,8 @@ def wiki(title):
     skin = prefs['skin']
     img_enabled = prefs['img'] == '1'
     prefs_string = build_prefs_string(prefs)
-    skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
-    img_toggle_params, img_toggle_text = get_img_toggle(prefs)
+    skin_toggle = f'/wiki/{title}?{get_skin_toggle(prefs)[0]}' if prefs_string else f'/wiki/{title}?skin={("dark" if skin=="light" else "light")}'
+    img_toggle = f'/wiki/{title}?{get_img_toggle(prefs)[0]}' if prefs_string else f'/wiki/{title}?img={("1" if img_enabled==False else "0")}'
 
     try:
         resp = requests.get(f'{WIKIPEDIA_BASE}/wiki/{title}', headers=HEADERS, timeout=10)
@@ -440,15 +440,12 @@ def wiki(title):
     return PAGE_TEMPLATE.format(
         doctype=DOCTYPE,
         meta=META,
-        title=title_text,
+        title_text=title_text,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
         header=HEADER.format(
-            path='wiki/' + title,
-            prefs=prefs_string,
-            skin_toggle_params=skin_toggle_params,
-            skin_toggle_text=skin_toggle_text,
-            img_toggle_params=img_toggle_params,
-            img_toggle_text=img_toggle_text,
+            prefs_string=prefs_string,
+            skin_toggle=skin_toggle,
+            img_toggle=img_toggle,
         ),
         content=body_content,
         footer=FOOTER.format(
@@ -484,9 +481,9 @@ def about():
     prefs = get_prefs()
     skin = prefs['skin']
     prefs_string = build_prefs_string(prefs)
-    skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
-    img_toggle_params, img_toggle_text = get_img_toggle(prefs)
-    
+    skin_toggle = f'"/about?{get_skin_toggle(prefs)[0]}">' if prefs_string else f'/about?skin={("dark" if skin=="light" else "light")}'
+    img_toggle = f'/about?{get_img_toggle(prefs)[0]}' if prefs_string else f'/about?img={("1" if img_enabled==False else "0")}'
+
     content = '''
 <h2>What is HTTPedia?</h2>
 <p>HTTPedia is a lightweight Wikipedia proxy designed for vintage computers and retro web browsers
@@ -521,12 +518,9 @@ or
         meta=META,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
         header=HEADER.format(
-            path='about',
             prefs_string=prefs_string,
-            skin_toggle_params=skin_toggle_params,
-            skin_toggle_text=skin_toggle_text,
-            img_toggle_params=img_toggle_params,
-            img_toggle_text=img_toggle_text,
+            skin_toggle=skin_toggle,
+            img_toggle=img_toggle,
         ),
         content=content,
     )
