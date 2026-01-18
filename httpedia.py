@@ -190,6 +190,10 @@ def get_prefs():
     img = request.args.get('img', '1')
     # planned prefs:
     # lang = request.args.get('lang', 'en')
+    if skin not in ('light', 'dark'):
+        skin = 'light'
+    if img not in ('0', '1'):
+        img = '1'
     return {'skin': skin, 'img': img}
 
 
