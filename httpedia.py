@@ -49,14 +49,14 @@ HEADER = '''<center>
 <h1>HTTPedia</h1>
 <small>
 Basic HTML Wikipedia proxy for retro computers. Built by 
-<a href="https://github.com/sammothxc/httpedia" target="_blank">
+<a href="https://github.com/sammothxc/httpedia">
 <b>sammothxc</b></a>, 2026.
 </small>
 <hr>
 <small><a href="/{home_query}">Home/Search</a> | 
 <a href="{skin_toggle_url}">{skin_toggle_text}</a> | 
 <a href="{img_toggle_url}">{img_toggle_text}</a> | 
-<a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a>
+<a href="https://ko-fi.com/sammothxc">Keep it running</a>
 </small>
 </center>
 <hr>'''
@@ -65,8 +65,8 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 FOOTER = '''<hr>
 <center>
 <small>
-Content sourced from <a href="{wikipedia_url}" target="_blank">this Wikipedia page</a> under 
-<a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank">CC BY-SA 4.0</a>.
+Content sourced from <a href="{wikipedia_url}">this Wikipedia page</a> under 
+<a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
 Donations support HTTPedia hosting, not Wikipedia.
 </small>
 <br>
@@ -84,14 +84,14 @@ HOME_TEMPLATE = '''{doctype}
 <small>
 <a href="/?{skin_toggle_params}">{skin_toggle_text}</a> | 
 <a href="/?{img_toggle_params}">{img_toggle_text}</a> | 
-<a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a>
+<a href="https://ko-fi.com/sammothxc">Keep it running</a>
 </small>
 <hr>
 <br>
 {logo}
 <small>
 Basic HTML Wikipedia proxy for retro computers. Built by 
-<a href="https://github.com/sammothxc/httpedia" target="_blank">
+<a href="https://github.com/sammothxc/httpedia">
 <b>sammothxc</b></a>, 2026.
 </small>
 <br>
@@ -110,9 +110,9 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 </p>
 <h3>Other Retro-Friendly Sites</h3>
 <p>
-<a href="http://frogfind.com" target="_blank">FrogFind</a> | 
-<a href="http://68k.news" target="_blank">68k.news</a> | 
-<a href="http://textfiles.com/" target="_blank">textfiles.com</a>*
+<a href="http://frogfind.com">FrogFind</a> | 
+<a href="http://68k.news">68k.news</a> | 
+<a href="http://textfiles.com/">textfiles.com</a>*
 </p>
 </center>
 </body>
@@ -531,7 +531,7 @@ def about():
 
     content = '''
 <h2>What is HTTPedia?</h2>
-<p>HTTPedia is a lightweight <a href="https://wikipedia.org" target="_blank">Wikipedia.org</a> proxy designed for vintage computers and retro web browsers
+<p>HTTPedia is a lightweight <a href="https://wikipedia.org">Wikipedia.org</a> proxy designed for vintage computers and retro web browsers
 that can no longer use most of the modern web as it is.</p>
 
 <p>Modern Wikipedia is filled JavaScript, complex CSS, high-resolution images, and it makes use of lots of 
@@ -552,9 +552,9 @@ there are no minimum HTTPS or TLS requirements.</p>
 <p>Because old computers deserve to access information too!</p>
 <p><strong>
 Want to help out?</strong> 
-<a href="https://github.com/sammothxc/httpedia" target="_blank">Leave feedback on the project on GitHub</a>
+<a href="https://github.com/sammothxc/httpedia">Leave feedback on the project on GitHub</a>
 or 
-<a href="https://ko-fi.com/sammothxc" target="_blank">donate to keep the server running.</a>
+<a href="https://ko-fi.com/sammothxc">donate to keep the server running.</a>
 </p>
 '''
 
