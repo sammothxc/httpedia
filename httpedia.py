@@ -30,7 +30,7 @@ HEADERS = {
 }
 
 
-DOCTYPE = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 2.0//EN">'
+DOCTYPE = '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">'
 
 
 META = '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'
