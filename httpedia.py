@@ -359,6 +359,7 @@ def wiki(title):
 
 
 @app.route('/img/<path:image_path>')
+@limiter.limit("1 per 5 seconds") # for now
 def proxy_image(image_path):
     prefs = get_prefs()
     if prefs['img'] == '0':
