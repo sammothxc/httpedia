@@ -402,8 +402,9 @@ def search_wikipedia(query, limit=10):
         return []
 
 
-@app.route('/wiki/<path:title>')
-def wiki(title):
+@app.route('/wiki/<path:unsafe_title>')
+def wiki(unsafe_title):
+    title = escape(unsafe_title)
     prefs = get_prefs()
     skin = prefs['skin']
     img_enabled = prefs['img'] == '1'
@@ -542,6 +543,14 @@ or
 @app.after_request
 def log_response(response):
     access_logger.info(f'{request.remote_addr} - {request.method} {request.path} - {response.status_code}')
+    return response
+
+
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    # no csp, it breaks several browsers
     return response
 
 
