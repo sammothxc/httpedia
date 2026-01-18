@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 
 WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET', 'change-me')
-REPO_PATH = './'
+REPO_SECRET = os.environ.get('REPO_SECRET', 'change-me')
 SERVICE_NAME = 'httpedia'
 
 @app.route('/webhook', methods=['POST'])
@@ -26,10 +26,10 @@ def webhook():
     if not hmac.compare_digest(signature, expected):
         return 'Invalid signature', 403
 
-    subprocess.run(['git', 'fetch', 'origin', 'main'], cwd=REPO_PATH)
+    subprocess.run(['git', 'fetch', 'origin', 'main'], cwd=REPO_SECRET)
     result = subprocess.run(
         ['git', 'reset', '--hard', 'origin/main'],
-        cwd=REPO_PATH,
+        cwd=REPO_SECRET,
         capture_output=True,
         text=True
     )
@@ -39,7 +39,7 @@ def webhook():
 
     pip_result = subprocess.run(
         ['pip', 'install', '-r', 'requirements.txt', '--break-system-packages'],
-        cwd=REPO_PATH,
+        cwd=REPO_SECRET,
         capture_output=True,
         text=True
     )
