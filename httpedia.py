@@ -22,6 +22,8 @@ DEFAULTS = {
     'img': '1',
 }
 
+MAX_QUERY_LENGTH = 500
+
 
 WIKIPEDIA_BASE = 'https://en.wikipedia.org'
 
