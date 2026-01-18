@@ -531,8 +531,8 @@ def about():
 
     content = '''
 <h2>What is HTTPedia?</h2>
-<p>HTTPedia is a lightweight Wikipedia proxy designed for vintage computers and retro web browsers
-that can no longer use the modern web.</p>
+<p>HTTPedia is a lightweight <a href="https://wikipedia.org" target="_blank">Wikipedia.org</a> proxy designed for vintage computers and retro web browsers
+that can no longer use most of the modern web as it is.</p>
 
 <p>Modern Wikipedia is filled JavaScript, complex CSS, high-resolution images, and it makes use of lots of 
 modern browser features that old machines can't handle. HTTPedia strips all that away and serves clean HTML 2.0 that works 
