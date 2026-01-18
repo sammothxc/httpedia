@@ -399,7 +399,7 @@ def search():
     skin = 'light'
     img = '1'
 
-    # Workaround for not being able to use `input type="hidden"` in Microweb
+    # i am pretty proud of this workaround for not being able to use `input type="hidden"` in Microweb
     if request.args.get('q_dark_noimg') is not None:
         query = request.args.get('q_dark_noimg')
         skin = 'dark'
@@ -440,14 +440,33 @@ def search():
     if len(query) > MAX_QUERY_LENGTH:
         query = query[:MAX_QUERY_LENGTH]
     
+    RESULTS_PER_PAGE = 10
+    MAX_PAGES = 10
+    
+    page = request.args.get('page', '1')
+    try:
+        page = int(page)
+        if page < 1:
+            page = 1
+        if page > MAX_PAGES:
+            page = MAX_PAGES
+    except ValueError:
+        page = 1
+    
     prefs_string = build_prefs_string(prefs)
     
-    results = search_wikipedia(query)
+    all_results = search_wikipedia(query)
+    total_results = len(all_results)
+    total_pages = min((total_results + RESULTS_PER_PAGE - 1) // RESULTS_PER_PAGE, MAX_PAGES)
+    
+    start_idx = (page - 1) * RESULTS_PER_PAGE
+    end_idx = start_idx + RESULTS_PER_PAGE
+    results = all_results[start_idx:end_idx]
     
     wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/Special:Search?search={quote_plus(query)}'
     title_text = f'Search: {escape(query)}'
 
-    if not results:
+    if not all_results:
         content = '<p>No results found.</p>'
     else:
         content = f'<center><p>Search Results for <b>{escape(query)}</b></p></center><ul>\n'
@@ -457,19 +476,31 @@ def search():
             snippet = r['snippet'] if r['snippet'] else 'No description available.'
             content += f'<li><a href="{url}">{escape(r["title"])}</a> - {escape(snippet)}</li>\n'
         content += '</ul>'
+        
+        if total_pages > 1:
+            content += '<hr><center>Page: '
+            for p in range(1, total_pages + 1):
+                if p == page:
+                    content += f'<b>[{p}]</b> '
+                else:
+                    page_params = f'q={quote_plus(query)}&page={p}'
+                    if prefs_string:
+                        page_params += f'&{prefs_string}'
+                    content += f'<a href="/search?{page_params}">{p}</a> '
+            content += '</center>'
 
     return PAGE_TEMPLATE.format(
         doctype=DOCTYPE,
         meta=META,
         title_text=title_text,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
-        header=render_header('/search', prefs, f'q={quote_plus(query)}'),
+        header=render_header('/search', prefs, f'q={quote_plus(query)}&page={page}'),
         content=content,
         footer=FOOTER.format(wikipedia_url=wikipedia_url),
     )
 
 
-def search_wikipedia(query, limit=10):
+def search_wikipedia(query, limit=100):
     try:
         resp = requests.get(
             f'{WIKIPEDIA_BASE}/w/api.php',
