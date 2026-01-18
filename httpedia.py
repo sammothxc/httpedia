@@ -193,11 +193,16 @@ def get_prefs():
     img = request.args.get('img', '1')
     # planned prefs:
     # lang = request.args.get('lang', 'en')
+    skin, img = validate_prefs(skin, img)
+    return {'skin': skin, 'img': img}
+
+
+def validate_prefs(skin, img):
     if skin not in ('light', 'dark'):
         skin = 'light'
     if img not in ('0', '1'):
         img = '1'
-    return {'skin': skin, 'img': img}
+    return skin, img
 
 
 def build_prefs_string(prefs):
@@ -338,6 +343,7 @@ def search():
     if request.args.get('img'):
         img = request.args.get('img')
     
+    skin, img = validate_prefs(skin, img)
     prefs = {'skin': skin, 'img': img}
     
     if not query:
