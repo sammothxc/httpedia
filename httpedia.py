@@ -70,6 +70,9 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <input type="submit" value="Search">
 </form>
 <br>
+<a href="/about?{prefs}">What is HTTPedia?</a>
+<br><br>
+<hr>
 <h3>Popular Links</h3>
 <p>
 {popular_links}
@@ -84,6 +87,17 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 </body>
 </html>'''
 
+ABOUT_TEMPLATE = '''{doctype}
+<html>
+<head>
+{meta}
+<title>{title}</title>
+</head>
+<body {body_style}>
+{header}
+{content}
+</body>
+</html>'''
 
 PAGE_TEMPLATE = '''{doctype}
 <html>
@@ -378,6 +392,60 @@ def proxy_image(image_path):
         return Response(gif_data, mimetype='image/gif')
     else:
         return Response(b'', status=404)
+
+
+@app.route('/about')
+def about():
+    prefs = get_prefs()
+    skin = prefs['skin']
+    prefs_string = build_prefs_string(prefs)
+    skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
+    img_toggle_params, img_toggle_text = get_img_toggle(prefs)
+    
+    content = '''
+<h2>What is HTTPedia?</h2>
+<p>HTTPedia is a lightweight Wikipedia proxy designed for vintage computers and retro web browsers
+that can no longer use the modern web.</p>
+
+<p>Modern Wikipedia is filled JavaScript, complex CSS, high-resolution images, and it makes use of lots of 
+modern browser features that old machines can't handle. HTTPedia strips all that away and serves clean HTML 2.0 that works 
+on browsers from the 1990s and earlier. In addition to cutting down on complexity, HTTPedia is served over HTTP meaning 
+there are no minimum HTTPS or TLS requirements.</p>
+
+<h3>Features</h3>
+<p>
+- Pure HTML 2.0 output (no JavaScript or CSS)<br>
+- Images converted to small GIFs<br>
+- Light and dark modes<br>
+- Option to disable images entirely<br>
+- Works on Netscape, Mosaic, early IE, and text browsers, even Microweb on an 8088!
+</p>
+
+<h3>So... Why?</h3>
+<p>Because old computers deserve to access information too!</p>
+<p>
+Want to help out? 
+<a href="https://github.com/sammothxc/httpedia" target="_blank">Leave feedback on the project on GitHub</a>
+or 
+<a href="https://ko-fi.com/sammothxc" target="_blank">donate to keep the server running.</a>
+</p>
+'''
+
+    return ABOUT_TEMPLATE.format(
+        doctype=DOCTYPE,
+        meta=META,
+        title='About HTTPedia',
+        body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
+        header=HEADER.format(
+            path='about',
+            prefs=prefs_string,
+            skin_toggle_params=skin_toggle_params,
+            skin_toggle_text=skin_toggle_text,
+            img_toggle_params=img_toggle_params,
+            img_toggle_text=img_toggle_text,
+        ),
+        content=content,
+    )
 
 
 @app.after_request
