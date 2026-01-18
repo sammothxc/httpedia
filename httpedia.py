@@ -557,6 +557,7 @@ def log_response(response):
 def add_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     # no csp, it breaks several browsers
     return response
 
