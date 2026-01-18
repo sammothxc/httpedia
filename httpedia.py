@@ -402,9 +402,11 @@ def search_wikipedia(query, limit=10):
         return []
 
 
-@app.route('/wiki/<path:unsafe_title>')
-def wiki(unsafe_title):
-    title = escape(unsafe_title)
+@app.route('/wiki/<path:title>')
+def wiki(title):
+    if not re.match(r'^[\w\s\-.,()\'&:!/]+$', title, re.UNICODE):
+        return Response(render_error('Invalid article title'), mimetype='text/html'), 400
+    
     prefs = get_prefs()
     skin = prefs['skin']
     img_enabled = prefs['img'] == '1'
