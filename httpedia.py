@@ -439,10 +439,12 @@ def wiki(title):
             if 'upload.wikimedia.org' in src:
                 if '/commons/' in src:
                     img_path = src.split('/commons/')[-1]
-                    article_image = f'<center><img src="/img/{img_path}" alt="{escape(title_text)}"></center><br>'
+                    if re.match(r'^[a-zA-Z0-9/_.-]+$', img_path) and '..' not in img_path:
+                        article_image = f'<center><img src="/img/{img_path}" alt="{escape(title_text)}"></center><br>'
                 elif '/en/' in src:
                     img_path = src.split('/en/')[-1]
-                    article_image = f'<center><img src="/img/en/{img_path}" alt="{escape(title_text)}"></center><br>'
+                    if re.match(r'^[a-zA-Z0-9/_.-]+$', img_path) and '..' not in img_path:
+                        article_image = f'<center><img src="/img/en/{img_path}" alt="{escape(title_text)}"></center><br>'
     
     unwanted_selectors = [
         'script', 'style', 'img', 'figure', 'table',
@@ -466,7 +468,8 @@ def wiki(title):
     body_content = f'<center><h2>{escape(title_text)}</h2></center>'
     body_content += article_image
     body_content += process_content(content, prefs_string)
-    wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/{title}'
+
+    wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/{quote(title, safe="")}'
 
     return PAGE_TEMPLATE.format(
         doctype=DOCTYPE,
