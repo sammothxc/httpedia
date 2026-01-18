@@ -575,7 +575,7 @@ def fetch_and_convert_image(image_url, max_width=200):
         if len(content) > 5 * 1024 * 1024:
             return None
         
-        img = Image.open(BytesIO(resp.content))
+        img = Image.open(BytesIO(content))
 
         if img.mode in ('RGBA', 'P'):
             img = img.convert('RGB')
@@ -590,7 +590,9 @@ def fetch_and_convert_image(image_url, max_width=200):
         output.seek(0)
         
         return output.getvalue()
-    except:
+    
+    except Exception as e:
+        app.logger.debug(f'Image conversion failed for {image_url}: {e}')
         return None
 
 
