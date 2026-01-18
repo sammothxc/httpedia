@@ -355,7 +355,7 @@ def search():
             title_slug = r['title'].replace(' ', '_')
             url = f'/wiki/{title_slug}?{prefs_string}' if prefs_string else f'/wiki/{title_slug}'
             snippet = r['snippet'] if r['snippet'] else 'No description available.'
-            content += f'<li><a href="{url}">{r["title"]}</a> - {snippet}</li>\n'
+            content += f'<li><a href="{url}">{escape(r["title"])}</a> - {escape(snippet)}</li>\n'
         content += '</ul>'
 
     return PAGE_TEMPLATE.format(
