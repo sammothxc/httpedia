@@ -14,19 +14,22 @@ from PIL import Image
 from io import BytesIO
 
 
+MAX_QUERY_LENGTH = 500
+MAX_IMAGES = 10
+RESULTS_PER_PAGE = 10
+MAX_PAGES = 50
+
+
 LOG_DIR = '/var/log/httpedia'
+
+
+WIKIPEDIA_BASE = 'https://en.wikipedia.org'
 
 
 DEFAULTS = {
     'skin': 'light',
     'img': '1',
 }
-
-MAX_QUERY_LENGTH = 500
-MAX_IMAGES = 10
-
-
-WIKIPEDIA_BASE = 'https://en.wikipedia.org'
 
 
 HEADERS = {
@@ -440,9 +443,6 @@ def search():
     if len(query) > MAX_QUERY_LENGTH:
         query = query[:MAX_QUERY_LENGTH]
     
-    RESULTS_PER_PAGE = 10
-    MAX_PAGES = 10
-    
     page = request.args.get('page', '1')
     try:
         page = int(page)
@@ -500,7 +500,7 @@ def search():
     )
 
 
-def search_wikipedia(query, limit=100):
+def search_wikipedia(query, limit=499):
     try:
         resp = requests.get(
             f'{WIKIPEDIA_BASE}/w/api.php',
