@@ -120,7 +120,7 @@ ABOUT_TEMPLATE = '''{doctype}
 <html>
 <head>
 {meta}
-<title>About HTTPedia</title>
+<title>What is HTTPedia?</title>
 </head>
 <body {body_style}>
 {header}
@@ -307,8 +307,8 @@ def search():
     query = None
     skin = 'light'
     img = '1'
-    
-    # i am proud of the workaround for not being able to use input type="hidden" in Microweb
+
+    # i am pretty proud of this workaround for not being able to use `input type="hidden"` in Microweb
     if request.args.get('q_dark_noimg') is not None:
         query = request.args.get('q_dark_noimg')
         skin = 'dark'
@@ -516,8 +516,8 @@ there are no minimum HTTPS or TLS requirements.</p>
 
 <h3>So... Why?</h3>
 <p>Because old computers deserve to access information too!</p>
-<p>
-Want to help out? 
+<p><strong>
+Want to help out?</strong> 
 <a href="https://github.com/sammothxc/httpedia" target="_blank">Leave feedback on the project on GitHub</a>
 or 
 <a href="https://ko-fi.com/sammothxc" target="_blank">donate to keep the server running.</a>
