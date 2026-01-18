@@ -50,9 +50,9 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <b>sammothxc</b></a>, 2026.
 </small>
 <hr>
-<small><a href="/?{prefs_string}">Home/Search</a> | 
-<a href={skin_toggle}</a> | 
-<a href={img_toggle}</a> | 
+<small><a href="/{home_query}">Home/Search</a> | 
+<a href="{skin_toggle_url}">{skin_toggle_text}</a> | 
+<a href="{img_toggle_url}">{img_toggle_text}</a> | 
 <a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a>
 </small>
 </center>
@@ -115,6 +115,7 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 </body>
 </html>'''
 
+
 ABOUT_TEMPLATE = '''{doctype}
 <html>
 <head>
@@ -126,6 +127,7 @@ ABOUT_TEMPLATE = '''{doctype}
 {content}
 </body>
 </html>'''
+
 
 PAGE_TEMPLATE = '''{doctype}
 <html>
@@ -220,6 +222,37 @@ def get_img_toggle(prefs):
     return build_prefs_string(new_prefs), text
 
 
+def build_toggle_url(base_path, toggle_params, extra_params=''):
+    params = toggle_params
+    if extra_params:
+        if params:
+            params = f'{params}&{extra_params}'
+        else:
+            params = extra_params
+    if params:
+        return f'{base_path}?{params}'
+    return base_path
+
+
+def render_header(base_path, prefs, extra_params=''):
+    prefs_string = build_prefs_string(prefs)
+    skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
+    img_toggle_params, img_toggle_text = get_img_toggle(prefs)
+    
+    home_query = f'?{prefs_string}' if prefs_string else ''
+    
+    skin_toggle_url = build_toggle_url(base_path, skin_toggle_params, extra_params)
+    img_toggle_url = build_toggle_url(base_path, img_toggle_params, extra_params)
+    
+    return HEADER.format(
+        home_query=home_query,
+        skin_toggle_url=skin_toggle_url,
+        skin_toggle_text=skin_toggle_text,
+        img_toggle_url=img_toggle_url,
+        img_toggle_text=img_toggle_text,
+    )
+
+
 @app.route('/')
 def home():
     prefs = get_prefs()
@@ -305,10 +338,6 @@ def search():
         return redirect(f'/?{prefs_string}' if prefs_string else '/')
     
     prefs_string = build_prefs_string(prefs)
-    skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
-    img_toggle_params, img_toggle_text = get_img_toggle(prefs)
-    skin_toggle = f'/search?{skin_toggle_params}&q={query}' if prefs_string else f'/search?skin={("dark" if skin=="light" else "light")}&q={query}'
-    img_toggle = f'/search?{img_toggle_params}&q={query}' if prefs_string else f'/search?img={("1" if img=="0" else "0")}&q={query}'
     
     results = search_wikipedia(query)
     wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/Special:Search?search={query}'
@@ -330,16 +359,9 @@ def search():
         meta=META,
         title_text=title_text,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
-        header=HEADER.format(
-            path='search?' + query, # x
-            prefs_string=prefs_string,
-            skin_toggle=skin_toggle,
-            img_toggle=img_toggle,
-        ),
+        header=render_header('/search', prefs, f'q={query}'),
         content=content,
-        footer=FOOTER.format(
-            wikipedia_url=wikipedia_url
-        ),
+        footer=FOOTER.format(wikipedia_url=wikipedia_url),
     )
 
 
@@ -380,8 +402,6 @@ def wiki(title):
     skin = prefs['skin']
     img_enabled = prefs['img'] == '1'
     prefs_string = build_prefs_string(prefs)
-    skin_toggle = f'/wiki/{title}?{get_skin_toggle(prefs)[0]}' if prefs_string else f'/wiki/{title}?skin={("dark" if skin=="light" else "light")}'
-    img_toggle = f'/wiki/{title}?{get_img_toggle(prefs)[0]}' if prefs_string else f'/wiki/{title}?img={("1" if img_enabled==False else "0")}'
 
     try:
         resp = requests.get(f'{WIKIPEDIA_BASE}/wiki/{title}', headers=HEADERS, timeout=10)
@@ -442,15 +462,9 @@ def wiki(title):
         meta=META,
         title_text=title_text,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
-        header=HEADER.format(
-            prefs_string=prefs_string,
-            skin_toggle=skin_toggle,
-            img_toggle=img_toggle,
-        ),
+        header=render_header(f'/wiki/{title}', prefs),
         content=body_content,
-        footer=FOOTER.format(
-            wikipedia_url=wikipedia_url
-        ),
+        footer=FOOTER.format(wikipedia_url=wikipedia_url),
     )
 
 
@@ -480,9 +494,6 @@ def proxy_image(image_path):
 def about():
     prefs = get_prefs()
     skin = prefs['skin']
-    prefs_string = build_prefs_string(prefs)
-    skin_toggle = f'"/about?{get_skin_toggle(prefs)[0]}">' if prefs_string else f'/about?skin={("dark" if skin=="light" else "light")}'
-    img_toggle = f'/about?{get_img_toggle(prefs)[0]}' if prefs_string else f'/about?img={("1" if img_enabled==False else "0")}'
 
     content = '''
 <h2>What is HTTPedia?</h2>
@@ -517,11 +528,7 @@ or
         doctype=DOCTYPE,
         meta=META,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
-        header=HEADER.format(
-            prefs_string=prefs_string,
-            skin_toggle=skin_toggle,
-            img_toggle=img_toggle,
-        ),
+        header=render_header('/about', prefs),
         content=content,
     )
 
