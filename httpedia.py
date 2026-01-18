@@ -23,6 +23,7 @@ DEFAULTS = {
 }
 
 MAX_QUERY_LENGTH = 500
+MAX_IMAGES = 10
 
 
 WIKIPEDIA_BASE = 'https://en.wikipedia.org'
@@ -200,7 +201,7 @@ def get_prefs():
 def validate_prefs(skin, img):
     if skin not in ('light', 'dark'):
         skin = 'light'
-    if img not in ('0', '1'):
+    if img not in ('0', '1', 'a'):
         img = '1'
     return skin, img
 
@@ -225,12 +226,18 @@ def get_skin_toggle(prefs):
 
 def get_img_toggle(prefs):
     new_prefs = prefs.copy()
-    if prefs['img'] == '0':
-        new_prefs['img'] = '1'
-        text = 'Load Images'
-    else:
+    current = prefs['img']
+    
+    if current == '1':
+        new_prefs['img'] = 'a'
+        text = 'Images: One'
+    elif current == 'a':
         new_prefs['img'] = '0'
-        text = "Don't Load Images"
+        text = 'Images: All'
+    else:
+        new_prefs['img'] = '1'
+        text = 'Images: None'
+    
     return build_prefs_string(new_prefs), text
 
 
@@ -265,6 +272,76 @@ def render_header(base_path, prefs, extra_params=''):
     )
 
 
+def extract_image_path(src):
+    if 'upload.wikimedia.org' not in src:
+        return None, None
+
+    if '/commons/' in src:
+        img_path = src.split('/commons/')[-1]
+        prefix = ''
+    elif '/en/' in src:
+        img_path = src.split('/en/')[-1]
+        prefix = 'en/'
+    else:
+        return None, None
+
+    if not re.match(r'^[a-zA-Z0-9/_.-]+$', img_path) or '..' in img_path:
+        return None, None
+    
+    return prefix, img_path
+
+
+def extract_article_images(content, title_text, mode, max_images=MAX_IMAGES):
+    if mode == '0':
+        return '', ''
+    
+    limit = 1 if mode == '1' else max_images
+    images = []
+    seen_paths = set()
+    
+    for img_tag in content.find_all('img', src=True):
+        if len(images) >= limit:
+            break
+        
+        src = img_tag.get('src', '')
+        prefix, img_path = extract_image_path(src)
+        
+        if img_path is None:
+            continue
+        
+        full_path = f'{prefix}{img_path}'
+        if full_path in seen_paths:
+            continue
+        seen_paths.add(full_path)
+        
+        width = img_tag.get('width', '')
+        height = img_tag.get('height', '')
+        try:
+            if width and int(width) < 50:
+                continue
+            if height and int(height) < 50:
+                continue
+        except ValueError:
+            pass
+        
+        alt_text = img_tag.get('alt', escape(title_text))
+        img_src = f'/img/{prefix}{img_path}'
+        images.append(f'<img src="{img_src}" alt="{escape(alt_text)}">')
+    
+    if not images:
+        return '', ''
+    
+    hero_html = f'<center>{images[0]}</center><br>'
+    
+    if len(images) > 1:
+        gallery_images = ' '.join(images[1:])
+        gallery_html = f'<h2>More Images</h2><br><br>{gallery_images}'
+    else:
+        gallery_html = ''
+    
+    return hero_html, gallery_html
+
+
 @app.route('/')
 def home():
     prefs = get_prefs()
@@ -274,7 +351,7 @@ def home():
     skin_toggle_params, skin_toggle_text = get_skin_toggle(prefs)
     img_toggle_params, img_toggle_text = get_img_toggle(prefs)
 
-    if img == '1':
+    if img != '0':
         logo = '<img src="/static/httpedia-logo.gif" alt="HTTPedia Logo" width="323" height="65"><br>'
     else:
         logo = '<h1>HTTPedia</h1>'
@@ -284,6 +361,8 @@ def home():
         input_name += '_dark'
     if img == '0':
         input_name += '_noimg'
+    elif img == 'a':
+        input_name += '_allimg'
 
     def build_link(path, text):
         url = f'{path}?{prefs_string}' if prefs_string else path
@@ -320,11 +399,15 @@ def search():
     skin = 'light'
     img = '1'
 
-    # i am pretty proud of this workaround for not being able to use `input type="hidden"` in Microweb
+    # Workaround for not being able to use `input type="hidden"` in Microweb
     if request.args.get('q_dark_noimg') is not None:
         query = request.args.get('q_dark_noimg')
         skin = 'dark'
         img = '0'
+    elif request.args.get('q_dark_allimg') is not None:
+        query = request.args.get('q_dark_allimg')
+        skin = 'dark'
+        img = 'a'
     elif request.args.get('q_dark') is not None:
         query = request.args.get('q_dark')
         skin = 'dark'
@@ -333,6 +416,10 @@ def search():
         query = request.args.get('q_noimg')
         skin = 'light'
         img = '0'
+    elif request.args.get('q_allimg') is not None:
+        query = request.args.get('q_allimg')
+        skin = 'light'
+        img = 'a'
     elif request.args.get('q') is not None:
         query = request.args.get('q')
         skin = 'light'
@@ -425,7 +512,7 @@ def wiki(title):
     
     prefs = get_prefs()
     skin = prefs['skin']
-    img_enabled = prefs['img'] == '1'
+    img_mode = prefs['img']
     prefs_string = build_prefs_string(prefs)
 
     try:
@@ -445,20 +532,7 @@ def wiki(title):
     if not content:
         return Response(render_error('Could not parse article'), mimetype='text/html')
     
-    article_image = ''
-    if img_enabled:
-        first_img = content.find('img', src=True)
-        if first_img:
-            src = first_img.get('src', '')
-            if 'upload.wikimedia.org' in src:
-                if '/commons/' in src:
-                    img_path = src.split('/commons/')[-1]
-                    if re.match(r'^[a-zA-Z0-9/_.-]+$', img_path) and '..' not in img_path:
-                        article_image = f'<center><img src="/img/{img_path}" alt="{escape(title_text)}"></center><br>'
-                elif '/en/' in src:
-                    img_path = src.split('/en/')[-1]
-                    if re.match(r'^[a-zA-Z0-9/_.-]+$', img_path) and '..' not in img_path:
-                        article_image = f'<center><img src="/img/en/{img_path}" alt="{escape(title_text)}"></center><br>'
+    hero_image, gallery_html = extract_article_images(content, title_text, img_mode)
     
     unwanted_selectors = [
         'script', 'style', 'img', 'figure', 'table',
@@ -480,8 +554,9 @@ def wiki(title):
         sup.decompose()
 
     body_content = f'<center><h2>{escape(title_text)}</h2></center>'
-    body_content += article_image
+    body_content += hero_image
     body_content += process_content(content, prefs_string)
+    body_content += gallery_html
 
     wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/{quote(title, safe="")}'
 
@@ -497,7 +572,7 @@ def wiki(title):
 
 
 @app.route('/img/<path:image_path>')
-@limiter.limit("1 per 5 seconds")   # for now
+@limiter.limit("10 per second")
 def proxy_image(image_path):
     prefs = get_prefs()
     if prefs['img'] == '0':
