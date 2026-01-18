@@ -429,7 +429,7 @@ def wiki(title):
     prefs_string = build_prefs_string(prefs)
 
     try:
-        resp = requests.get(f'{WIKIPEDIA_BASE}/wiki/{quote(title, safe="")}', headers=HEADERS, timeout=10)
+        resp = requests.get(f'{WIKIPEDIA_BASE}/wiki/{title}', headers=HEADERS, timeout=10)
         resp.raise_for_status()
     except requests.RequestException as e:
         app.logger.error(f'Could not fetch article {title}: {e}')
