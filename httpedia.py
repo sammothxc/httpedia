@@ -474,16 +474,16 @@ def wiki(title):
     return PAGE_TEMPLATE.format(
         doctype=DOCTYPE,
         meta=META,
-        title_text=title_text,
+        title_text=escape(title_text),
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
-        header=render_header(f'/wiki/{title}', prefs),
+        header=render_header(f'/wiki/{quote(title, safe="")}', prefs),
         content=body_content,
         footer=FOOTER.format(wikipedia_url=wikipedia_url),
     )
 
 
 @app.route('/img/<path:image_path>')
-@limiter.limit("1 per 5 seconds") # for now
+@limiter.limit("1 per 5 seconds")   # for now
 def proxy_image(image_path):
     prefs = get_prefs()
     if prefs['img'] == '0':
