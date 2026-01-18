@@ -42,6 +42,34 @@ BODY_STYLES = {
 }
 
 
+HEADER = '''<center>
+<h1>HTTPedia</h1>
+<small>
+Basic HTML Wikipedia proxy for retro computers. Built by 
+<a href="https://github.com/sammothxc/httpedia" target="_blank">
+<b>sammothxc</b></a>, 2026.
+</small>
+<hr>
+<small><a href="/?{prefs_string}">Home/Search</a> | 
+<a href="/{path}?{skin_toggle_params}">{skin_toggle_text}</a> | 
+<a href="/{path}?{img_toggle_params}">{img_toggle_text}</a> | 
+<a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a>
+</small>
+</center>
+<hr>'''
+
+
+FOOTER = '''<hr>
+<center>
+<small>
+Content sourced from <a href="{wikipedia_url}" target="_blank">this Wikipedia page</a> under 
+<a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank">CC BY-SA 4.0</a>.
+Donations support HTTPedia hosting, not Wikipedia.
+</small>
+<br>
+</center>'''
+
+
 HOME_TEMPLATE = '''{doctype}
 <html>
 <head>
@@ -70,7 +98,7 @@ Basic HTML Wikipedia proxy for retro computers. Built by
 <input type="submit" value="Search">
 </form>
 <br>
-<a href="/about?{prefs}">What is HTTPedia?</a>
+<a href="/about?{prefs_string}">What is HTTPedia?</a>
 <br><br>
 <hr>
 <h3>Popular Links</h3>
@@ -91,7 +119,7 @@ ABOUT_TEMPLATE = '''{doctype}
 <html>
 <head>
 {meta}
-<title>{title}</title>
+<title>About HTTPedia</title>
 </head>
 <body {body_style}>
 {header}
@@ -103,7 +131,7 @@ PAGE_TEMPLATE = '''{doctype}
 <html>
 <head>
 {meta}
-<title>{title} - HTTPedia</title>
+<title>{title_text} - HTTPedia</title>
 </head>
 <body {body_style}>
 {header}
@@ -111,34 +139,6 @@ PAGE_TEMPLATE = '''{doctype}
 {footer}
 </body>
 </html>'''
-
-
-HEADER = '''<center>
-<h1>HTTPedia</h1>
-<small>
-Basic HTML Wikipedia proxy for retro computers. Built by 
-<a href="https://github.com/sammothxc/httpedia" target="_blank">
-<b>sammothxc</b></a>, 2026.
-</small>
-<hr>
-<small><a href="/?{prefs}">Home/Search</a> | 
-<a href="/{path}?{skin_toggle_params}">{skin_toggle_text}</a> | 
-<a href="/{path}?{img_toggle_params}">{img_toggle_text}</a> | 
-<a href="https://ko-fi.com/sammothxc" target="_blank">Keep it running</a>
-</small>
-</center>
-<hr>'''
-
-
-FOOTER = '''<hr>
-<center>
-<small>
-Content sourced from <a href="{wikipedia_url}" target="_blank">this Wikipedia page</a> under 
-<a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank">CC BY-SA 4.0</a>.
-Donations support HTTPedia hosting, not Wikipedia.
-</small>
-<br>
-</center>'''
 
 
 ERROR_TEMPLATE = '''{doctype}
@@ -258,14 +258,14 @@ def home():
         doctype=DOCTYPE,
         meta=META,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
+        prefs_string=prefs_string,
         skin_toggle_params=skin_toggle_params,
         skin_toggle_text=skin_toggle_text,
         img_toggle_params=img_toggle_params,
         img_toggle_text=img_toggle_text,
         logo=logo,
         input_name=input_name,
-        popular_links=' | \n'.join(popular_links),
-        prefs=prefs_string
+        popular_links=' | \n'.join(popular_links)
     )
 
 
@@ -313,32 +313,30 @@ def search():
     title_text = f'Search: {query}'
 
     if not results:
-        results_html = '<p>No results found.</p>'
+        content = '<p>No results found.</p>'
     else:
-        results_html = f'<center><p>Search Results for <b>{escape(query)}</b></p></center><ul>\n'
+        content = f'<center><p>Search Results for <b>{escape(query)}</b></p></center><ul>\n'
         for r in results:
             title_slug = r['title'].replace(' ', '_')
             url = f'/wiki/{title_slug}?{prefs_string}' if prefs_string else f'/wiki/{title_slug}'
             snippet = r['snippet'] if r['snippet'] else 'No description available.'
-            results_html += f'<li><a href="{url}">{r["title"]}</a> - {snippet}</li>\n'
-        results_html += '</ul>'
-    
-
+            content += f'<li><a href="{url}">{r["title"]}</a> - {snippet}</li>\n'
+        content += '</ul>'
 
     return PAGE_TEMPLATE.format(
         doctype=DOCTYPE,
         meta=META,
-        title=title_text,
+        title_text=title_text,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
         header=HEADER.format(
             path=query,
-            prefs=prefs_string,
+            prefs_string=prefs_string,
             skin_toggle_params=skin_toggle_params,
             skin_toggle_text=skin_toggle_text,
             img_toggle_params=img_toggle_params,
             img_toggle_text=img_toggle_text,
         ),
-        content=results_html,
+        content=content,
         footer=FOOTER.format(
             wikipedia_url=wikipedia_url
         ),
@@ -521,11 +519,10 @@ or
     return ABOUT_TEMPLATE.format(
         doctype=DOCTYPE,
         meta=META,
-        title='About HTTPedia',
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
         header=HEADER.format(
             path='about',
-            prefs=prefs_string,
+            prefs_string=prefs_string,
             skin_toggle_params=skin_toggle_params,
             skin_toggle_text=skin_toggle_text,
             img_toggle_params=img_toggle_params,
