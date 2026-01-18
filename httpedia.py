@@ -409,6 +409,9 @@ def wiki(title):
     if not re.match(r'^[\w\s\-.,()\'\"&:;!/#+%@]+$', title, re.UNICODE):
         return Response(render_error('Invalid article title'), mimetype='text/html'), 400
     
+    if len(title) > 500:
+        return Response(render_error('Article title too long'), mimetype='text/html'), 400
+    
     prefs = get_prefs()
     skin = prefs['skin']
     img_enabled = prefs['img'] == '1'
