@@ -396,7 +396,9 @@ def search_wikipedia(query, limit=10):
                 'snippet': descriptions[i] if i < len(descriptions) else ''
             })
         return results
-    except:
+
+    except Exception as e:
+        app.logger.warning(f'Wikipedia search failed: {e}')
         return []
 
 
