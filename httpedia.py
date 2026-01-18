@@ -495,7 +495,13 @@ def proxy_image(image_path):
     if '..' in image_path:
         return Response(b'', status=400)
     
-    image_url = f'https://upload.wikimedia.org/wikipedia/commons/{image_path}'
+    if len(image_path) > 500:
+        return Response(b'', status=400)
+    
+    if image_path.startswith('en/'):
+        image_url = f'https://upload.wikimedia.org/wikipedia/{image_path}'
+    else:
+        image_url = f'https://upload.wikimedia.org/wikipedia/commons/{image_path}'
     
     gif_data = fetch_and_convert_image(image_url)
     if gif_data:
