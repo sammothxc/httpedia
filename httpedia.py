@@ -342,6 +342,9 @@ def search():
         prefs_string = build_prefs_string(prefs)
         return redirect(f'/?{prefs_string}' if prefs_string else '/')
     
+    if len(query) > MAX_QUERY_LENGTH:
+        query = query[:MAX_QUERY_LENGTH]
+    
     prefs_string = build_prefs_string(prefs)
     
     results = search_wikipedia(query)
