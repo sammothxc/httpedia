@@ -3,6 +3,7 @@ import requests
 import re
 import logging
 from logging.handlers import RotatingFileHandler
+from urllib.parse import quote, quote_plus
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask import Flask, Response, request, redirect
@@ -344,15 +345,16 @@ def search():
     prefs_string = build_prefs_string(prefs)
     
     results = search_wikipedia(query)
-    wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/Special:Search?search={query}'
-    title_text = f'Search: {query}'
+    
+    wikipedia_url = f'{WIKIPEDIA_BASE}/wiki/Special:Search?search={quote_plus(query)}'
+    title_text = f'Search: {escape(query)}'
 
     if not results:
         content = '<p>No results found.</p>'
     else:
         content = f'<center><p>Search Results for <b>{escape(query)}</b></p></center><ul>\n'
         for r in results:
-            title_slug = r['title'].replace(' ', '_')
+            title_slug = quote(r['title'].replace(' ', '_'), safe='')
             url = f'/wiki/{title_slug}?{prefs_string}' if prefs_string else f'/wiki/{title_slug}'
             snippet = r['snippet'] if r['snippet'] else 'No description available.'
             content += f'<li><a href="{url}">{escape(r["title"])}</a> - {escape(snippet)}</li>\n'
@@ -363,7 +365,7 @@ def search():
         meta=META,
         title_text=title_text,
         body_style=BODY_STYLES.get(skin, BODY_STYLES['light']),
-        header=render_header('/search', prefs, f'q={query}'),
+        header=render_header('/search', prefs, f'q={quote_plus(query)}'),
         content=content,
         footer=FOOTER.format(wikipedia_url=wikipedia_url),
     )
@@ -404,7 +406,7 @@ def search_wikipedia(query, limit=10):
 
 @app.route('/wiki/<path:title>')
 def wiki(title):
-    if not re.match(r'^[\w\s\-.,()\'&:!/]+$', title, re.UNICODE):
+    if not re.match(r'^[\w\s\-.,()\'\"&:;!/#+%@]+$', title, re.UNICODE):
         return Response(render_error('Invalid article title'), mimetype='text/html'), 400
     
     prefs = get_prefs()
@@ -413,7 +415,7 @@ def wiki(title):
     prefs_string = build_prefs_string(prefs)
 
     try:
-        resp = requests.get(f'{WIKIPEDIA_BASE}/wiki/{title}', headers=HEADERS, timeout=10)
+        resp = requests.get(f'{WIKIPEDIA_BASE}/wiki/{quote(title, safe="")}', headers=HEADERS, timeout=10)
         resp.raise_for_status()
     except requests.RequestException as e:
         app.logger.error(f'Could not fetch article {title}: {e}')
