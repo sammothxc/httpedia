@@ -693,10 +693,12 @@ def process_paragraph(element, prefs):
                 continue
             
             if href.startswith('/wiki/') and ':' not in href:
+                safe_href = escape(href)
                 if prefs:
-                    result.append(f'<a href="{href}?{prefs}">{escape(text)}</a>')
+                    result.append(f'<a href="{safe_href}?{prefs}">{escape(text)}</a>')
                 else:
-                    result.append(f'<a href="{href}">{escape(text)}</a>')
+                    result.append(f'<a href="{safe_href}">{escape(text)}</a>')
+
         
         elif child.name == 'b' or child.name == 'strong':
             text = child.get_text()
