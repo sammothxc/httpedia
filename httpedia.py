@@ -556,15 +556,19 @@ def add_security_headers(response):
 
 def fetch_and_convert_image(image_url, max_width=200):
     try:
-        resp = requests.get(image_url, headers=HEADERS, timeout=10)
+        resp = requests.get(image_url, headers=HEADERS, timeout=10, stream=True)
         resp.raise_for_status()
         
-        if len(resp.content) > 5 * 1024 * 1024:
+        content_length = resp.headers.get('Content-Length')
+        if content_length and int(content_length) > 5 * 1024 * 1024:
+            return None
+        
+        content = resp.content
+        if len(content) > 5 * 1024 * 1024:
             return None
         
         img = Image.open(BytesIO(resp.content))
 
-        
         if img.mode in ('RGBA', 'P'):
             img = img.convert('RGB')
         
