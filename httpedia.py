@@ -535,16 +535,17 @@ def about():
 that can no longer use most of the modern web as it is.</p>
 
 <p>Modern Wikipedia is filled JavaScript, complex CSS, high-resolution images, and it makes use of lots of 
-modern browser features that old machines can't handle. HTTPedia strips all that away and serves clean HTML 2.0 that works 
+modern browser features that old machines can't handle. HTTPedia strips all that away and serves clean HTML 3.2 that works 
 on browsers from the 1990s and earlier. In addition to cutting down on complexity, HTTPedia is served over HTTP meaning 
 there are no minimum HTTPS or TLS requirements.</p>
 
 <h3>Features</h3>
 <p>
-- Pure HTML 2.0 output (no JavaScript or CSS)<br>
-- Images converted to small GIFs<br>
+- Pure, <a href="https://validator.w3.org/check?uri=http%3A%2F%2Fhttpedia.samwarr.net%2F">
+validated HTML 3.2 output</a> (no JavaScript or CSS)<br>
+- All images converted to GIFs for compatibility<br>
 - Light and dark modes<br>
-- Option to disable images entirely<br>
+- Option to load one, all, or disable images entirely<br>
 - Works on Netscape, Mosaic, early IE, and text browsers, even Microweb on an 8088!
 </p>
 
