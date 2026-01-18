@@ -600,7 +600,7 @@ def render_error(message):
     return ERROR_TEMPLATE.format(
         doctype=DOCTYPE,
         meta=META,
-        message=message
+        message=escape(message)
     )
 
 
@@ -621,7 +621,7 @@ def process_element(element, lines, prefs):
             text = clean_text(child.get_text())
             text = re.sub(r'\[edit\]', '', text).strip()
             if text:
-                lines.append(f'<{child.name}>{text}</{child.name}>')
+                lines.append(f'<{child.name}>{escape(text)}</{child.name}>')
 
         elif child.name == 'ul':
             list_html = process_list(child, ordered=False, prefs=prefs)
@@ -636,7 +636,7 @@ def process_element(element, lines, prefs):
         elif child.name == 'dl':
             for item in child.children:
                 if item.name == 'dt':
-                    lines.append(f'<p><b>{clean_text(item.get_text())}</b></p>')
+                    lines.append(f'<p><b>{escape(clean_text(item.get_text()))}</b></p>')
                 elif item.name == 'dd':
                     html = process_paragraph(item, prefs)
                     if html.strip():
@@ -645,7 +645,7 @@ def process_element(element, lines, prefs):
         elif child.name == 'blockquote':
             text = clean_text(child.get_text())
             if text.strip():
-                lines.append(f'<blockquote>{text}</blockquote>')
+                lines.append(f'<blockquote>{escape(text)}</blockquote>')
 
         elif child.name == 'div':
             if 'mw-heading' in child.get('class', []):
@@ -653,7 +653,7 @@ def process_element(element, lines, prefs):
                     text = clean_text(h.get_text())
                     text = re.sub(r'\[edit\]', '', text).strip()
                     if text:
-                        lines.append(f'<{h.name}>{text}</{h.name}>')
+                        lines.append(f'<{h.name}>{escape(text)}</{h.name}>')
             else:
                 process_element(child, lines, prefs)
 
@@ -674,19 +674,19 @@ def process_paragraph(element, prefs):
             
             if href.startswith('/wiki/') and ':' not in href:
                 if prefs:
-                    result.append(f'<a href="{href}?{prefs}">{text}</a>')
+                    result.append(f'<a href="{href}?{prefs}">{escape(text)}</a>')
                 else:
-                    result.append(f'<a href="{href}">{text}</a>')
+                    result.append(f'<a href="{href}">{escape(text)}</a>')
         
         elif child.name == 'b' or child.name == 'strong':
             text = child.get_text()
             if text.strip():
-                result.append(text)
+                result.append(escape(text))
         
         elif child.name == 'i' or child.name == 'em':
             text = child.get_text()
             if text.strip():
-                result.append(f'<i>{text}</i>')
+                result.append(f'<i>{escape(text)}</i>')
         
         elif child.name == 'br':
             result.append('<br>')
@@ -695,10 +695,10 @@ def process_paragraph(element, prefs):
             result.append(process_paragraph(child, prefs))
         
         elif child.string:
-            result.append(re.sub(r'\s+', ' ', child.string))
+            result.append(escape(re.sub(r'\s+', ' ', child.string)))
         
         elif hasattr(child, 'get_text'):
-            result.append(re.sub(r'\s+', ' ', child.get_text()))
+            result.append(escape(re.sub(r'\s+', ' ', child.get_text())))
     
     text = ''.join(result)
     text = re.sub(r'\[edit\]', '', text)
