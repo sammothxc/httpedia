@@ -6,7 +6,7 @@ Modern Wikipedia is filled JavaScript, complex CSS, high-resolution images, and 
 HTTPedia strips all that away and serves clean HTML 3.2 that works on browsers from the 1990s and earlier.
 In addition to cutting down on complexity, HTTPedia is served over HTTP meaning there are no minimum HTTPS or TLS requirements.
 
-🌐 **Check it out:** [httpedia.samwarr.dev](http://httpedia.samwarr.dev)
+🌐 **Check it out:** [http://httpedia.samwarr.net](http://httpedia.samwarr.net)
 
 
 ## Features
