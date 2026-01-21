@@ -2,6 +2,7 @@ import os
 import requests
 import re
 import logging
+import hashlib
 from logging.handlers import RotatingFileHandler
 from urllib.parse import quote, quote_plus
 from flask_limiter import Limiter
@@ -18,11 +19,11 @@ MAX_QUERY_LENGTH = 500
 MAX_IMAGES = 10
 RESULTS_PER_PAGE = 10
 MAX_PAGES = 50
+MAX_CACHE_SIZE_GB = 90
 
 
 LOG_DIR = '/var/log/httpedia'
-
-
+CACHE_DIR = '/var/cache/httpedia/images'
 WIKIPEDIA_BASE = 'https://en.wikipedia.org'
 
 
@@ -167,6 +168,9 @@ ERROR_TEMPLATE = '''{doctype}
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
+if not os.path.exists(CACHE_DIR):
+    os.makedirs(CACHE_DIR)
+
 file_handler = RotatingFileHandler(
     f'{LOG_DIR}/access.log',
     maxBytes=1024*1024,
@@ -174,7 +178,6 @@ file_handler = RotatingFileHandler(
 )
 file_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
 file_handler.setLevel(logging.INFO)
-
 access_logger = logging.getLogger('httpedia.access')
 access_logger.setLevel(logging.INFO)
 access_logger.addHandler(file_handler)
@@ -728,6 +731,17 @@ def add_security_headers(response):
 
 
 def fetch_and_convert_image(image_url, max_width=200):
+    cache_key = hashlib.md5(image_url.encode()).hexdigest() + '.gif'
+    cache_path = os.path.join(CACHE_DIR, cache_key)
+    use_cache = not app.debug
+    
+    if use_cache and os.path.exists(cache_path):
+        try:
+            with open(cache_path, 'rb') as f:
+                return f.read()
+        except Exception:
+            pass
+    
     try:
         resp = requests.get(image_url, headers=HEADERS, timeout=10, stream=True)
         resp.raise_for_status()
@@ -753,8 +767,16 @@ def fetch_and_convert_image(image_url, max_width=200):
         output = BytesIO()
         img.save(output, format='GIF')
         output.seek(0)
+        gif_data = output.getvalue()
         
-        return output.getvalue()
+        if use_cache:
+            try:
+                with open(cache_path, 'wb') as f:
+                    f.write(gif_data)
+            except Exception as e:
+                app.logger.debug(f'Failed to cache image: {e}')
+        
+        return gif_data
     
     except Exception as e:
         app.logger.debug(f'Image conversion failed for {image_url}: {e}')
@@ -897,5 +919,5 @@ def clean_text(text):
 
 
 if __name__ == '__main__':
-    debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    debug = os.environ.get('DEBUG', 'false').lower() == 'true'
     app.run(host='0.0.0.0', port=80, debug=debug)
