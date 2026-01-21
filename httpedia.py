@@ -406,7 +406,6 @@ def home():
         url = f'{path}?{prefs_string}' if prefs_string else path
         return f'<a href="{url}">{text}</a>'
 
-    # implement actual popular links later on
     popular_links = [
         build_link('/wiki/Computer', 'Computer'),
         build_link('/wiki/Internet', 'Internet'),
@@ -684,12 +683,14 @@ there are no minimum HTTPS or TLS requirements.</p>
 
 <h3>Features</h3>
 <p>
+- No HTTPS required! Works on machines that can't handle modern TLS
 - Pure, <a href="https://validator.w3.org/check?uri=http%3A%2F%2Fhttpedia.samwarr.net%2F">
 validated HTML 3.2 output</a> (no JavaScript or CSS)<br>
 - All images converted to GIFs for compatibility<br>
 - Light and dark modes<br>
 - Option to load one, all, or disable images entirely<br>
-- Works on Netscape, Mosaic, early IE, and text browsers, even Microweb on an 8088!
+- Works on Netscape, Mosaic, early IE, text browsers, even Microweb on an 8088!
+- [COMING SOON] Support for multiple languages
 </p>
 
 <h3>So... Why?</h3>
