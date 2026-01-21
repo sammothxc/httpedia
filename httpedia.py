@@ -738,6 +738,7 @@ def fetch_and_convert_image(image_url, max_width=200):
     if use_cache and os.path.exists(cache_path):
         try:
             with open(cache_path, 'rb') as f:
+                app.logger.info(f'Cache hit: {cache_key}')
                 return f.read()
         except Exception:
             pass
