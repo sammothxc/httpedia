@@ -70,7 +70,7 @@ Donations go toward server hosting costs, and hopefully more projects like this 
 
 ## License
 
-CC-BY-NC-SA License, see [LICENSE](LICENSE) for details.
+GNU General Public License v3.0, see [LICENSE](LICENSE) for details.
 
 
 ## Acknowledgments
