@@ -757,7 +757,7 @@ def fetch_and_convert_image(image_url, max_width=200):
         return output.getvalue()
     
     except Exception as e:
-        print(f'DEBUG: Image fetch failed: {e}')
+        app.logger.debug(f'Image conversion failed for {image_url}: {e}')
         return None
 
 
