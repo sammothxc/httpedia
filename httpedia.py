@@ -735,10 +735,14 @@ def fetch_and_convert_image(image_url, max_width=200):
     cache_path = os.path.join(CACHE_DIR, cache_key)
     use_cache = not app.debug
     
+    print(f'DEBUG: image_url={image_url}')
+    print(f'DEBUG: cache_path={cache_path}')
+    print(f'DEBUG: app.debug={app.debug}, use_cache={use_cache}')
+    
     if use_cache and os.path.exists(cache_path):
+        print(f'DEBUG: Cache hit!')
         try:
             with open(cache_path, 'rb') as f:
-                app.logger.info(f'Cache hit: {cache_key}')
                 return f.read()
         except Exception:
             pass
@@ -771,16 +775,18 @@ def fetch_and_convert_image(image_url, max_width=200):
         gif_data = output.getvalue()
         
         if use_cache:
+            print(f'DEBUG: Writing to cache: {cache_path}')
             try:
                 with open(cache_path, 'wb') as f:
                     f.write(gif_data)
+                print(f'DEBUG: Cache write successful')
             except Exception as e:
-                app.logger.debug(f'Failed to cache image: {e}')
+                print(f'DEBUG: Cache write failed: {e}')
         
         return gif_data
     
     except Exception as e:
-        app.logger.debug(f'Image conversion failed for {image_url}: {e}')
+        print(f'DEBUG: Image fetch failed: {e}')
         return None
 
 
