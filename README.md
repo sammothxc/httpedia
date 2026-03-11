@@ -1,12 +1,13 @@
+
 ![HTTPedia Logo](/static/httpedia-logo.gif)
 
-**A lightweight Wikipedia proxy for vintage computers and retro web browsers.**
+A lightweight Wikipedia proxy for vintage computers and retro web browsers.
 
 Modern Wikipedia is filled JavaScript, complex CSS, high-resolution images, and it makes use of lots of modern browser features that old machines can't handle.
 HTTPedia strips all that away and serves clean HTML 3.2 that works on browsers from the 1990s and earlier.
 In addition to cutting down on complexity, HTTPedia is served over HTTP meaning there are no minimum HTTPS or TLS requirements.
 
-🌐 **Check it out:** [http://httpedia.samwarr.net](http://httpedia.samwarr.net)
+Check it out: [http://httpedia.samwarr.net](http://httpedia.samwarr.net)
 
 
 ## Features
@@ -78,7 +79,3 @@ GNU General Public License v3.0, see [LICENSE](LICENSE) for details.
 - Content sourced from [Wikipedia](https://www.wikipedia.org/) under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 - Inspired by [FrogFind](http://frogfind.com) and [68k.news](http://68k.news), go check them out!
 
----
-
-
-*Because old computers deserve to access information too.*
