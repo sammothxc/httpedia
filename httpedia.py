@@ -212,10 +212,10 @@ def get_skin_toggle(prefs):
     new_prefs = prefs.copy()
     if prefs['skin'] == 'light':
         new_prefs['skin'] = 'dark'
-        text = 'Dark Mode'
+        text = 'Theme: Dark'
     else:
         new_prefs['skin'] = 'light'
-        text = 'Light Mode'
+        text = 'Theme: Light'
     return build_prefs_string(new_prefs), text
 
 

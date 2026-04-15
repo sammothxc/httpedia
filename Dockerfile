@@ -26,4 +26,4 @@ USER httpedia
 
 EXPOSE 80
 
-CMD ["python", "httpedia.py"]
+CMD ["gunicorn", "--bind", "0.0.0.0:80", "--workers", "2", "httpedia:app"]

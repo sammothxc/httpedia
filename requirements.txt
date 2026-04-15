@@ -6,3 +6,4 @@ python-dotenv
 Pillow
 flask_limiter
 markupsafe
+gunicorn
