@@ -1,0 +1,9 @@
+services:
+  httpedia:
+    container_name: httpedia
+    image: ghcr.io/sammothxc/httpedia
+    restart: unless-stopped
+    ports:
+      - 80:80
+    #environment:
+      #- DEBUG=true

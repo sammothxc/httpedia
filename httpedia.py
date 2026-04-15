@@ -2,7 +2,7 @@ import os
 import requests
 import re
 import logging
-from logging.handlers import RotatingFileHandler
+from logging import StreamHandler
 from urllib.parse import quote, quote_plus
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -20,7 +20,6 @@ RESULTS_PER_PAGE = 10
 MAX_PAGES = 50
 
 
-LOG_DIR = '/var/log/httpedia'
 
 
 WIKIPEDIA_BASE = 'https://en.wikipedia.org'
@@ -164,20 +163,13 @@ ERROR_TEMPLATE = '''{doctype}
 </html>'''
 
 
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
-
-file_handler = RotatingFileHandler(
-    f'{LOG_DIR}/access.log',
-    maxBytes=1024*1024,
-    backupCount=5
-)
-file_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-file_handler.setLevel(logging.INFO)
+stream_handler = StreamHandler()
+stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+stream_handler.setLevel(logging.INFO)
 
 access_logger = logging.getLogger('httpedia.access')
 access_logger.setLevel(logging.INFO)
-access_logger.addHandler(file_handler)
+access_logger.addHandler(stream_handler)
 
 load_dotenv()
 
@@ -897,5 +889,5 @@ def clean_text(text):
 
 
 if __name__ == '__main__':
-    debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    debug = os.environ.get('DEBUG', 'false').lower() == 'true'
     app.run(host='0.0.0.0', port=80, debug=debug)
