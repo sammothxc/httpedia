@@ -50,7 +50,7 @@ All processing happens server-side, so the client just receives simple, lightwei
 
 To protect both the server and Wikipedia's API:
 
-- General requests: 1 per second per IP
+- General requests: 2 per second per IP
 - Image requests: 5 per second per IP
 
 
