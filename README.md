@@ -4,6 +4,8 @@
 
 A lightweight Wikipedia proxy for vintage computers and retro web browsers.
 
+[![Status](https://status.samwarr.dev/api/badge/12/status)](https://status.samwarr.dev)
+
 Modern Wikipedia is filled JavaScript, complex CSS, high-resolution images, and it makes use of lots of modern browser features that old machines can't handle.
 HTTPedia strips all that away and serves clean HTML 3.2 that works on browsers from the 1990s and earlier.
 In addition to cutting down on complexity, HTTPedia is served over HTTP meaning there are no minimum HTTPS or TLS requirements.
