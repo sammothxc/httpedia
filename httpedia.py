@@ -876,6 +876,9 @@ def process_paragraph(element, prefs):
     result = []
     
     for child in element.children:
+        if isinstance(child, Comment):
+            continue
+
         if child.name == 'a':
             href = child.get('href', '')
             text = child.get_text()
