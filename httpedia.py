@@ -373,6 +373,12 @@ def extract_infobox(content):
     return html
 
 
+@app.route('/robots.txt')
+@limiter.exempt
+def robots():
+    return Response("User-agent: *\nDisallow: /\n", mimetype='text/plain')
+
+
 @app.route('/')
 def home():
     prefs = get_prefs()
