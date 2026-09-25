@@ -8,7 +8,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask import Flask, Response, request, redirect
 from markupsafe import escape
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 from dotenv import load_dotenv
 from PIL import Image
 from io import BytesIO
@@ -655,6 +655,7 @@ def wiki(title):
         '.portal', '.sistersitebox', '.noexcerpt',
         '.mw-references-wrap', '.refbegin', '.refend',
         '.navbox-styles', '.catlinks', '.mw-authority-control',
+        '.Inline-Template', '.Template-Fact',
     ]
 
     for selector in unwanted_selectors:
@@ -878,18 +879,29 @@ def process_paragraph(element, prefs):
         if child.name == 'a':
             href = child.get('href', '')
             text = child.get_text()
-            
+
             if not text.strip():
                 continue
-            
+
+            # Wikipedia now emits absolute article URLs; normalize to a
+            # relative /wiki/ path so internal links still resolve.
+            if href.startswith(WIKIPEDIA_BASE):
+                href = href[len(WIKIPEDIA_BASE):]
+            elif href.startswith('//en.wikipedia.org'):
+                href = href[len('//en.wikipedia.org'):]
+
             if href.startswith('/wiki/') and ':' not in href:
                 safe_href = escape(href)
                 if prefs:
                     result.append(f'<a href="{safe_href}?{prefs}">{escape(text)}</a>')
                 else:
                     result.append(f'<a href="{safe_href}">{escape(text)}</a>')
+            else:
+                # external, namespace (File:/Help:/...), or citation anchor:
+                # keep the visible text so the sentence stays intact.
+                result.append(escape(text))
 
-        
+
         elif child.name == 'b' or child.name == 'strong':
             text = child.get_text()
             if text.strip():
