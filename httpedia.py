@@ -373,10 +373,46 @@ def extract_infobox(content):
     return html
 
 
+ROBOTS_TXT = """\
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: SemrushBot-BA
+Disallow: /
+
+User-agent: SemrushBot-SI
+Disallow: /
+
+User-agent: SemrushBot-SWA
+Disallow: /
+
+User-agent: SemrushBot-OCOB
+Disallow: /
+
+User-agent: SemrushBot-FT
+Disallow: /
+
+User-agent: SemrushBot-ESI
+Disallow: /
+
+User-agent: SiteAuditBot
+Disallow: /
+
+User-agent: SplitSignalBot
+Disallow: /
+
+User-agent: RyteBot
+Disallow: /
+
+User-agent: *
+Disallow: /
+"""
+
+
 @app.route('/robots.txt')
 @limiter.exempt
 def robots():
-    return Response("User-agent: *\nDisallow: /\n", mimetype='text/plain')
+    return Response(ROBOTS_TXT, mimetype='text/plain')
 
 
 @app.route('/')
