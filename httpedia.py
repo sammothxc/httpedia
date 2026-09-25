@@ -185,6 +185,16 @@ limiter.init_app(app)
 Image.MAX_IMAGE_PIXELS = 10000000
 
 
+@app.after_request
+def set_security_headers(resp):
+    resp.headers['Content-Security-Policy'] = (
+        "default-src 'self'; img-src 'self' data:; "
+        "style-src 'self' 'unsafe-inline'; script-src 'none'"
+    )
+    resp.headers['X-Content-Type-Options'] = 'nosniff'
+    return resp
+
+
 def get_prefs():
     skin = request.args.get('skin', 'light')
     img = request.args.get('img', '1')
