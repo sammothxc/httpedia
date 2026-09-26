@@ -3,7 +3,7 @@ import requests
 import re
 import logging
 from logging import StreamHandler
-from urllib.parse import quote, quote_plus
+from urllib.parse import quote, quote_plus, urlparse
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask import Flask, Response, request, redirect
@@ -279,14 +279,18 @@ def render_header(base_path, prefs, extra_params=''):
 
 
 def extract_image_path(src):
-    if 'upload.wikimedia.org' not in src:
+    # Wikipedia now serves thumbnails from thumb.wikimedia.org with tracking
+    # query params (?utm_source=...); accept both hosts and drop the query
+    parsed = urlparse(src)
+    if parsed.netloc not in ('upload.wikimedia.org', 'thumb.wikimedia.org'):
         return None, None
+    path = parsed.path
 
-    if '/commons/' in src:
-        img_path = src.split('/commons/')[-1]
+    if '/commons/' in path:
+        img_path = path.split('/commons/')[-1]
         prefix = ''
-    elif '/en/' in src:
-        img_path = src.split('/en/')[-1]
+    elif '/en/' in path:
+        img_path = path.split('/en/')[-1]
         prefix = 'en/'
     else:
         return None, None
