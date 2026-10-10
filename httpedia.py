@@ -764,7 +764,10 @@ or
 
 @app.after_request
 def log_response(response):
-    access_logger.info(f'{request.remote_addr} - {request.method} {request.path} - {response.status_code}')
+    asn = request.headers.get('X-ASN', '-')
+    client_ip = request.headers.get('Cf-Connecting-IP', request.remote_addr)
+    user_agent = request.headers.get('User-Agent', '-')
+    access_logger.info(f'AS{asn} {client_ip} - {request.method} {request.path} - {response.status_code} - "{user_agent}"')
     return response
 
 
