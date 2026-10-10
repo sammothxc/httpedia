@@ -175,8 +175,13 @@ load_dotenv()
 
 app = Flask(__name__)
 
+def get_client_ip():
+    # behind the cloudflare tunnel, remote_addr is always cloudflared
+    return request.headers.get('Cf-Connecting-IP') or get_remote_address()
+
+
 limiter = Limiter(
-    key_func=get_remote_address,
+    key_func=get_client_ip,
     default_limits=["2 per second"],
     storage_uri="memory://"
 )
@@ -765,7 +770,7 @@ or
 @app.after_request
 def log_response(response):
     asn = request.headers.get('X-ASN', '-')
-    client_ip = request.headers.get('Cf-Connecting-IP', request.remote_addr)
+    client_ip = get_client_ip()
     user_agent = request.headers.get('User-Agent', '-')
     access_logger.info(f'AS{asn} {client_ip} - {request.method} {request.path} - {response.status_code} - "{user_agent}"')
     return response
