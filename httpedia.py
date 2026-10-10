@@ -170,6 +170,8 @@ stream_handler.setLevel(logging.INFO)
 access_logger = logging.getLogger('httpedia.access')
 access_logger.setLevel(logging.INFO)
 access_logger.addHandler(stream_handler)
+# 'httpedia.access' is a child of app.logger ('httpedia'), don't double-log through it
+access_logger.propagate = False
 
 load_dotenv()
 
@@ -638,8 +640,10 @@ def wiki(title):
         resp = requests.get(f'{WIKIPEDIA_BASE}/wiki/{title}', headers=HEADERS, timeout=10)
         resp.raise_for_status()
     except requests.RequestException as e:
+        if e.response is not None and e.response.status_code == 404:
+            return Response(render_error('Article not found'), mimetype='text/html'), 404
         app.logger.error(f'Could not fetch article {title}: {e}')
-        return Response(render_error('Could not fetch article. Please try again.'), mimetype='text/html')
+        return Response(render_error('Could not fetch article. Please try again.'), mimetype='text/html'), 502
 
     soup = BeautifulSoup(resp.text, 'lxml')
 
