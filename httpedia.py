@@ -653,7 +653,8 @@ def wiki(title):
     all_outputs = soup.find_all('div', {'class': 'mw-parser-output'})
     content = max(all_outputs, key=lambda div: len(list(div.children))) if all_outputs else None
     if not content:
-        return Response(render_error('Could not parse article'), mimetype='text/html')
+        app.logger.error(f'Could not parse article {title}: no mw-parser-output')
+        return Response(render_error('Could not parse article'), mimetype='text/html'), 500
     
     infobox_html = extract_infobox(content)
     hero_image, gallery_html = extract_article_images(content, title_text, img_mode)
