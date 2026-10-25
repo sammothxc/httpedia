@@ -9,7 +9,6 @@ A lightweight Wikipedia proxy for vintage computers and retro web browsers.
 [![Tests](https://github.com/sammothxc/spiderfoot-ng/actions/workflows/tests.yaml/badge.svg)](https://github.com/sammothxc/spiderfoot-ng/actions/workflows/tests.yaml)
 [![Docker](https://github.com/sammothxc/httpedia/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/sammothxc/httpedia/actions/workflows/docker-publish.yml)
 [![CodeQL](https://github.com/sammothxc/httpedia/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/sammothxc/spiderfoot-ng/actions/workflows/codeql-analysis.yml])
-[![Last Commit](https://img.shields.io/github/last-commit/sammothxc/httpedia)](https://github.com/sammothxc/httpedia/commits/master)
 
 Modern Wikipedia is filled JavaScript, complex CSS, high-resolution images, and it makes use of lots of modern browser features that old machines can't handle.
 HTTPedia strips all that away and serves clean HTML 3.2 that works on browsers from the 1990s and earlier.
