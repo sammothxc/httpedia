@@ -34,11 +34,12 @@ validated HTML 3.2 output</a> (no JavaScript or CSS)<br>
 
 Tested and working on:
 
+- [ELKSWeb](https://github.com/l00nix/ELKSWeb)
+- [Microweb](https://github.com/jhhoward/MicroWeb)
 - Netscape Navigator 2.0+
 - Mosaic
 - Internet Explorer 3.0+
 - Lynx and other text browsers
-- Microweb on an 8088 PC clone
 - Basically anything that can render HTML
 
 
