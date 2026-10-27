@@ -618,7 +618,7 @@ def search():
     if not all_results:
         content = '<p>No results found.</p>'
     else:
-        content = f'<center><p>Search Results for <b>{escape(query)}</b></p></center><ul>\n'
+        content = f'<center><p>Search Results for {escape(query)}</p></center><ul>\n'
         for r in results:
             title_slug = quote(r['title'].replace(' ', '_'), safe='')
             url = f'/wiki/{title_slug}?{prefs_string}' if prefs_string else f'/wiki/{title_slug}'
@@ -630,7 +630,7 @@ def search():
             content += '<hr><center>Page: '
             for p in range(1, total_pages + 1):
                 if p == page:
-                    content += f'<b>[{p}]</b> '
+                    content += f'[{p}] '
                 else:
                     page_params = f'q={quote_plus(query)}&page={p}'
                     if prefs_string:
@@ -653,27 +653,33 @@ def search_wikipedia(query, limit=499):
     try:
         resp = requests.get(
             f'{WIKIPEDIA_BASE}/w/api.php',
+            # same prefix search as opensearch, but opensearch now always returns
+            # empty descriptions, so ask for the short descriptions explicitly
             params={
-                'action': 'opensearch',
-                'search': query,
-                'limit': limit,
-                'format': 'json'
+                'action': 'query',
+                'generator': 'prefixsearch',
+                'gpssearch': query,
+                'gpslimit': limit,
+                'prop': 'description',
+                'redirects': 1,
+                'format': 'json',
+                'formatversion': 2,
             },
             headers=HEADERS,
             timeout=10
         )
         resp.raise_for_status()
         data = resp.json()
-        
-        # opensearch returns: [query, [titles], [descriptions], [urls]]
-        titles = data[1] if len(data) > 1 else []
-        descriptions = data[2] if len(data) > 2 else []
-        
+
+        # pages come back unordered, 'index' is the search rank
+        pages = data.get('query', {}).get('pages', [])
+        pages.sort(key=lambda p: p.get('index', 0))
+
         results = []
-        for i, title in enumerate(titles):
+        for p in pages:
             results.append({
-                'title': title,
-                'snippet': descriptions[i] if i < len(descriptions) else ''
+                'title': p['title'],
+                'snippet': p.get('description', '')
             })
         return results
 
