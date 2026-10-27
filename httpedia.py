@@ -869,14 +869,13 @@ validated HTML 3.2 output</a> (no JavaScript or CSS)<br>
 - All images converted to GIFs for compatibility<br>
 - Light and dark modes<br>
 - Option to load one, all, or disable images entirely<br>
-- Works on Netscape, Mosaic, early IE, text browsers, even Microweb on an 8088!
+- Works on Netscape, Mosaic, early IE, text browsers, even Microweb on an 8088!<br>
 - [COMING SOON] Support for multiple languages
 </p>
 
 <h3>So... Why?</h3>
 <p>Because old computers deserve to access information too!</p>
-<p><strong>
-Want to help out?</strong> 
+<p>Want to help out?
 <a href="https://github.com/sammothxc/httpedia">Leave feedback on the project on GitHub</a>
 or 
 <a href="https://ko-fi.com/sammothxc">donate to keep the server running.</a>
