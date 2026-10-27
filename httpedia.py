@@ -325,15 +325,16 @@ def get_img_toggle(prefs):
     new_prefs = prefs.copy()
     current = prefs['img']
     
+    # one -> none -> all, so a machine that chokes on images never has to load all of them to get to none
     if current == '1':
-        new_prefs['img'] = 'a'
-        text = 'Images: One'
-    elif current == 'a':
         new_prefs['img'] = '0'
-        text = 'Images: All'
+        text = 'Images: One'
+    elif current == '0':
+        new_prefs['img'] = 'a'
+        text = 'Images: None'
     else:
         new_prefs['img'] = '1'
-        text = 'Images: None'
+        text = 'Images: All'
     
     return build_prefs_string(new_prefs), text
 
