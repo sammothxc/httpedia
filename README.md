@@ -20,7 +20,7 @@ Check it out: [http://httpedia.com](http://httpedia.com)
 ## Features
 
 - No HTTPS required! Works on machines that can't handle modern TLS
-- Pure, <a href="https://validator.w3.org/check?uri=http%3A%2F%2Fhttpedia.samwarr.net%2F">
+- Pure, <a href="https://validator.w3.org/check?uri=http%3A%2F%2Fhttpedia.com%2F">
 validated HTML 3.2 output</a> (no JavaScript or CSS)<br>
 - All images converted to GIFs for compatibility<br>
 - Light and dark modes<br>
