@@ -547,12 +547,11 @@ def home():
         return f'<a href="{url}">{text}</a>'
 
     popular_links = [
-        build_link('/wiki/Internet', 'Internet'),
+        build_link('/wiki/Embeddable_Linux_Kernel_Subset', 'Embeddable Linux Kernel Subset'),
         build_link('/wiki/World_Wide_Web', 'World Wide Web'),
         build_link('/wiki/Compaq_Portable', 'Compaq Portable'),
         build_link('/wiki/IBM_PC', 'IBM PC'),
         build_link('/wiki/Apple_II', 'Apple II'),
-        build_link('/wiki/Embeddable_Linux_Kernel_Subset', 'Embeddable Linux Kernel Subset'),
     ]
 
     return HOME_TEMPLATE.format(
