@@ -1,6 +1,8 @@
 import os
 import requests
 import re
+import time
+import threading
 import logging
 from logging import StreamHandler
 from urllib.parse import quote, quote_plus, urlparse
@@ -18,6 +20,8 @@ MAX_QUERY_LENGTH = 500
 MAX_IMAGES = 10
 RESULTS_PER_PAGE = 10
 MAX_PAGES = 50
+SESSION_TTL = 3600
+SESSION_PRUNE_INTERVAL = 300
 
 
 
@@ -149,6 +153,28 @@ PAGE_TEMPLATE = '''{doctype}
 </html>'''
 
 
+GATE_TEMPLATE = '''{doctype}
+<html>
+<head>
+{meta}
+<title>One More Step - HTTPedia</title>
+</head>
+<body {body_style}>
+<center>
+<h1>HTTPedia</h1>
+<hr>
+<h2>One More Step</h2>
+<p>HTTPedia is being flooded by bots, so please only press the button if you're a human.<br>
+You will only need to do this about once an hour.</p>
+<form action="{action}" method="get">
+<input type="text" name="{input_name}" value="{value}" size="30">
+<input type="submit" value="{button}">
+</form>
+</center>
+</body>
+</html>'''
+
+
 ERROR_TEMPLATE = '''{doctype}
 <html>
 <head>
@@ -189,6 +215,36 @@ limiter = Limiter(
 )
 limiter.init_app(app)
 
+
+# IPs that submitted a form (search or the gate's Continue) in the last hour.
+# lives in process memory, so gunicorn must run a single worker (threads are fine)
+sessions = {}
+sessions_lock = threading.Lock()
+sessions_last_prune = time.monotonic()
+
+
+def start_session(ip):
+    with sessions_lock:
+        sessions[ip] = time.monotonic()
+
+
+def has_session(ip):
+    global sessions_last_prune
+    now = time.monotonic()
+    with sessions_lock:
+        if now - sessions_last_prune > SESSION_PRUNE_INTERVAL:
+            for stale_ip in [k for k, seen in sessions.items() if now - seen > SESSION_TTL]:
+                del sessions[stale_ip]
+            sessions_last_prune = now
+
+        seen = sessions.get(ip)
+        if seen is None or now - seen > SESSION_TTL:
+            sessions.pop(ip, None)
+            return False
+        # sliding window, so long reading sessions don't get cut off
+        sessions[ip] = now
+        return True
+
 Image.MAX_IMAGE_PIXELS = 10000000
 
 
@@ -217,6 +273,32 @@ def validate_prefs(skin, img):
     if img not in ('0', '1', 'a'):
         img = '1'
     return skin, img
+
+
+# i am pretty proud of this workaround for not being able to use `input type="hidden"` in Microweb
+FORM_INPUTS = {
+    'q_dark_noimg': ('dark', '0'),
+    'q_dark_allimg': ('dark', 'a'),
+    'q_dark': ('dark', '1'),
+    'q_noimg': ('light', '0'),
+    'q_allimg': ('light', 'a'),
+    'q': ('light', '1'),
+}
+
+
+def get_form_input():
+    for name, (skin, img) in FORM_INPUTS.items():
+        value = request.args.get(name)
+        if value is not None:
+            return value, skin, img
+    return None, 'light', '1'
+
+
+def build_input_name(prefs):
+    for name, (skin, img) in FORM_INPUTS.items():
+        if (skin, img) == (prefs['skin'], prefs['img']):
+            return name
+    return 'q'
 
 
 def build_prefs_string(prefs):
@@ -450,13 +532,7 @@ def home():
     else:
         logo = '<h1>HTTPedia</h1>'
 
-    input_name = 'q'
-    if skin == 'dark':
-        input_name += '_dark'
-    if img == '0':
-        input_name += '_noimg'
-    elif img == 'a':
-        input_name += '_allimg'
+    input_name = build_input_name(prefs)
 
     def build_link(path, text):
         url = f'{path}?{prefs_string}' if prefs_string else path
@@ -488,36 +564,8 @@ def home():
 
 @app.route('/search')
 def search():
-    query = None
-    skin = 'light'
-    img = '1'
+    query, skin, img = get_form_input()
 
-    # i am pretty proud of this workaround for not being able to use `input type="hidden"` in Microweb
-    if request.args.get('q_dark_noimg') is not None:
-        query = request.args.get('q_dark_noimg')
-        skin = 'dark'
-        img = '0'
-    elif request.args.get('q_dark_allimg') is not None:
-        query = request.args.get('q_dark_allimg')
-        skin = 'dark'
-        img = 'a'
-    elif request.args.get('q_dark') is not None:
-        query = request.args.get('q_dark')
-        skin = 'dark'
-        img = '1'
-    elif request.args.get('q_noimg') is not None:
-        query = request.args.get('q_noimg')
-        skin = 'light'
-        img = '0'
-    elif request.args.get('q_allimg') is not None:
-        query = request.args.get('q_allimg')
-        skin = 'light'
-        img = 'a'
-    elif request.args.get('q') is not None:
-        query = request.args.get('q')
-        skin = 'light'
-        img = '1'
-    
     if request.args.get('skin'):
         skin = request.args.get('skin')
     if request.args.get('img'):
@@ -532,7 +580,11 @@ def search():
     
     if len(query) > MAX_QUERY_LENGTH:
         query = query[:MAX_QUERY_LENGTH]
-    
+
+    # every pagination/toggle link carries page=, a real form submit never does
+    if 'page' not in request.args:
+        start_session(get_client_ip())
+
     page = request.args.get('page', '1')
     try:
         page = int(page)
@@ -621,6 +673,66 @@ def search_wikipedia(query, limit=499):
     except Exception as e:
         app.logger.warning(f'Wikipedia search failed: {e}')
         return []
+
+
+@app.before_request
+def require_session():
+    # nobody real lands on an article without searching first, so anything that hits
+    # Wikipedia without a recent form submit from this IP is almost certainly a bot
+    path = request.path
+    gated = (
+        path.startswith('/wiki/')
+        or path.startswith('/img/')
+        or (path == '/search' and 'page' in request.args)
+    )
+    if not gated or has_session(get_client_ip()):
+        return None
+
+    if path.startswith('/img/'):
+        resp = Response(b'', status=403)
+    else:
+        resp = Response(render_gate(), mimetype='text/html', status=403)
+    # Continue redirects back to this exact URL, so old browsers must not reuse
+    # the gate page from cache. Pragma/Expires are for the HTTP/1.0 crowd
+    resp.headers['Cache-Control'] = 'no-store, no-cache'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = 'Thu, 01 Jan 1970 00:00:00 GMT'
+    return resp
+
+
+def render_gate():
+    prefs = get_prefs()
+    if request.path == '/search':
+        action = '/search'
+        value = request.args.get('q', '')
+        button = 'Search'
+    else:
+        action = '/go'
+        value = (request.view_args or {}).get('title', '').replace('_', ' ')
+        button = 'Continue'
+
+    return GATE_TEMPLATE.format(
+        doctype=DOCTYPE,
+        meta=META,
+        body_style=BODY_STYLES.get(prefs['skin'], BODY_STYLES['light']),
+        action=action,
+        input_name=build_input_name(prefs),
+        value=escape(value[:MAX_QUERY_LENGTH]),
+        button=button,
+    )
+
+
+@app.route('/go')
+def go():
+    title, skin, img = get_form_input()
+    prefs_string = build_prefs_string({'skin': skin, 'img': img})
+
+    if not title or not title.strip():
+        return redirect(f'/?{prefs_string}' if prefs_string else '/')
+
+    start_session(get_client_ip())
+    title_slug = quote(title.strip()[:MAX_QUERY_LENGTH].replace(' ', '_'), safe='')
+    return redirect(f'/wiki/{title_slug}?{prefs_string}' if prefs_string else f'/wiki/{title_slug}')
 
 
 @app.route('/wiki/<path:title>')

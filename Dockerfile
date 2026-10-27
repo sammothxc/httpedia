@@ -26,4 +26,4 @@ USER httpedia
 
 EXPOSE 80
 
-CMD ["gunicorn", "--bind", "0.0.0.0:80", "--workers", "2", "httpedia:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:80", "--workers", "1", "--threads", "8", "httpedia:app"]
