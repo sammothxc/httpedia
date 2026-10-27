@@ -202,6 +202,8 @@ access_logger.propagate = False
 load_dotenv()
 
 app = Flask(__name__)
+# flask defaults static files to no-cache, which makes cloudflare go back to us every time
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000
 
 def get_client_ip():
     # behind the cloudflare tunnel, remote_addr is always cloudflared
@@ -516,6 +518,12 @@ Disallow: /
 @limiter.exempt
 def robots():
     return Response(ROBOTS_TXT, mimetype='text/plain')
+
+
+@app.route('/favicon.ico')
+@limiter.exempt
+def favicon():
+    return app.send_static_file('favicon.ico')
 
 
 @app.route('/')
