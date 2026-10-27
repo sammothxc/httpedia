@@ -618,7 +618,7 @@ def search():
     if not all_results:
         content = '<p>No results found.</p>'
     else:
-        content = f'<center><p>Search Results for {escape(query)}</p></center><ul>\n'
+        content = f'<center><p>Search Results for "{escape(query)}"</p></center><ul>\n'
         for r in results:
             title_slug = quote(r['title'].replace(' ', '_'), safe='')
             url = f'/wiki/{title_slug}?{prefs_string}' if prefs_string else f'/wiki/{title_slug}'
