@@ -511,6 +511,10 @@ User-agent: RyteBot
 Disallow: /
 
 User-agent: *
+Allow: /$
+Allow: /about$
+Allow: /static/
+Allow: /favicon.ico
 Disallow: /
 """
 
