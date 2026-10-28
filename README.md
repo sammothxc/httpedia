@@ -4,7 +4,7 @@
 
 A lightweight Wikipedia proxy for vintage computers and retro web browsers.
 
-[![Status](https://status.samwarr.dev/api/badge/12/status)](https://status.samwarr.dev)
+[![Status](https://status.samwarr.dev/api/badge/12/status?=hsfsdfgdfgh)](https://status.samwarr.dev)
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 [![Tests](https://github.com/sammothxc/spiderfoot-ng/actions/workflows/tests.yaml/badge.svg)](https://github.com/sammothxc/spiderfoot-ng/actions/workflows/tests.yaml)
 [![Docker](https://github.com/sammothxc/httpedia/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/sammothxc/httpedia/actions/workflows/docker-publish.yml)
