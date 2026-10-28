@@ -541,7 +541,8 @@ def home():
     img_toggle_params, img_toggle_text = get_img_toggle(prefs)
 
     if img != '0':
-        logo = '<img src="/static/httpedia-logo.gif" alt="HTTPedia Logo" width="323" height="65"><br>'
+        logo_file = 'httpedia-logo-dark.gif' if skin == 'dark' else 'httpedia-logo.gif'
+        logo = f'<img src="/static/{logo_file}" alt="HTTPedia Logo" width="323" height="65"><br>'
     else:
         logo = '<h1>HTTPedia</h1>'
 

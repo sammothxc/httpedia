@@ -1,5 +1,5 @@
 
-![HTTPedia Logo](/static/httpedia-logo.gif#gh-dark-mode-only)
+![HTTPedia Logo](/static/httpedia-logo-dark.gif#gh-dark-mode-only)
 ![HTTPedia Logo](/static/httpedia-logo.gif#gh-light-mode-only)
 
 A lightweight Wikipedia proxy for vintage computers and retro web browsers.
